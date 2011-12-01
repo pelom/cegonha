@@ -13,8 +13,13 @@
 	
 	<context:component-scan base-package="br.pelommedrado.transobj" />
 	<context:annotation-config/>
+	
+	<bean id="mapaSemente"
+		class="br.pelommedrado.transobj.util.MapaSemente" scope="singleton">
+	</bean>
+	
 	<bean class="br.pelommedrado.transobj.util.PropertiesUtil">
-		<property name="location" value="config.properties"/>
+		<property name="location" value="/WEB-INF/classes/config.properties"/>
 	</bean>
 	
 </beans>

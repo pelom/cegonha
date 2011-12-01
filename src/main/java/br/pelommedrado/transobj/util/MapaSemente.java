@@ -42,7 +42,9 @@ public class MapaSemente {
 
 		//lista de semente nao existe?
 		if(sementes == null) {
+			//crair e adicionar a lista 
 			sementes = new Vector<Semente>();
+			mapa.put(key, sementes);
 		}
 
 		//adicionar semente
@@ -58,6 +60,11 @@ public class MapaSemente {
 		//gerar chave
 		final Integer key =  new Integer(chave.hashCode());
 
-		return mapa.get(key);
+		List<Semente> sementes = mapa.get(key);
+		if(sementes == null) {
+			sementes = new Vector<Semente>();
+		}
+
+		return sementes;
 	}
 }
