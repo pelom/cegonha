@@ -87,6 +87,8 @@ public class TransCliente {
 	 * @param arquivo
 	 */
 	private Semente encontrarSemente(List<Semente> sementes, String arquivo) {
+		logger.info("iniciando a busca por semente que obtenha o arquivo:" + arquivo);
+
 		TransWebServiceCliente wsSemente = null;
 
 		//embaralhar sementes
@@ -122,6 +124,8 @@ public class TransCliente {
 		if(semente != null) {
 			endereco = semente.getEndereco();
 		}
+
+		logger.info("baixando o arquivo:" + arquivo + " da semente:" + endereco);
 
 		//criar cliente FTP
 		final TransFtpCliente tfSemente = new TransFtpCliente();

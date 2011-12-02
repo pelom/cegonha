@@ -4,8 +4,6 @@ import java.net.URI;
 
 import javax.ws.rs.core.UriBuilder;
 
-import org.springframework.stereotype.Service;
-
 import com.sun.jersey.api.client.Client;
 import com.sun.jersey.api.client.WebResource;
 import com.sun.jersey.api.client.config.ClientConfig;
@@ -14,7 +12,6 @@ import com.sun.jersey.api.client.config.DefaultClientConfig;
 /**
  * @author Andre Leite
  */
-@Service("clienteWs")
 public class ClienteWs {
 
 	/** Cliente do ws **/
