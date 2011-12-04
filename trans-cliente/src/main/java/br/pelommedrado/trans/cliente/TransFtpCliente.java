@@ -1,15 +1,16 @@
 package br.pelommedrado.trans.cliente;
 
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.OutputStream;
+import java.io.InputStream;
 import java.net.SocketException;
 
-import org.apache.commons.io.IOUtils;
 import org.apache.commons.net.ftp.FTPClient;
+import org.apache.commons.net.ftp.FTPFile;
 import org.apache.commons.net.ftp.FTPReply;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import br.pelommedrado.trans.util.DownloadManager;
 
 /**
  * @author Andre Leite
@@ -46,7 +47,7 @@ public class TransFtpCliente {
 		ftp.connect(servidor, porta);  
 
 		// verifica se conectou com sucesso!  
-		if(FTPReply.isPositiveCompletion(ftp.getReplyCode()))  {  
+		if(FTPReply.isPositiveCompletion(ftp.getReplyCode()))  {
 			logger.debug("conexao estabelecida com sucesso, realizando login com o usuario:" + usuario);
 
 			//realizar login
@@ -67,30 +68,36 @@ public class TransFtpCliente {
 	/**
 	 * 
 	 * @param ftp
-	 * @param dirIn
-	 * @param dirOut
-	 * @param file
+	 * @param fileIn
+	 * @param fileOut
+	 * @return
 	 * @throws IOException
 	 */
-	public void download(FTPClient ftp, String dirIn, String dirOut, String file) 
+	public boolean download(FTPClient ftp, String fileIn, String fileOut) 
 			throws IOException {
 
 		//a conexao nao esta ativa? 
-		if(!FTPReply.isPositiveCompletion(ftp.getReplyCode())) { 
+		if(!FTPReply.isPositiveCompletion(ftp.getReplyCode())) {
 			throw new IOException("a conexao nao esta ativa");  
 		}
 
-		//arquivo remoto
-		String remoteFile = dirIn + "/" + file;
+		logger.debug("baixando o arquivo...");
 
-		//write the contents of the remote file to a FileOutputStream
-		final OutputStream outStream = 
-				new FileOutputStream( dirOut + "/" + file);
+		//obter as informacoes do arquivo a serem baixado
+		final FTPFile[] remoteFiles = ftp.listFiles(fileIn);
+		//tamanho do arquivo
+		final long length = remoteFiles[0].getSize();
+		//obter entrada de dados
+		final InputStream in = ftp.retrieveFileStream(fileIn);
 
-		ftp.retrieveFile(remoteFile, outStream);
+		//iniciar o gerenciador de download
+		final DownloadManager downloadManager = 
+				new DownloadManager(in, fileOut, length);
 
-		IOUtils.closeQuietly( outStream );
+		//iniciar o download gerenciado.
+		downloadManager.iniciar();
 
-		ftp.disconnect();
+		//download completado
+		return ftp.completePendingCommand();
 	} 
 }

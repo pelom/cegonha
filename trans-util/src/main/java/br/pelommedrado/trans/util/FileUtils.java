@@ -16,15 +16,24 @@ public class FileUtils {
 	/**
 	 * 
 	 * @param path
-	 * 
 	 * @return
 	 * @throws IOException
 	 */
 	public static long gerarChecksum(String path) throws IOException {
 		final File myfile = new File(path);
-		return  Files.getChecksum(myfile , new java.util.zip.CRC32());
+		return gerarChecksum(myfile);
 	}
-	
+	/**
+	 * 
+	 * @param path
+	 * 
+	 * @return
+	 * @throws IOException
+	 */
+	public static long gerarChecksum(File file) throws IOException {
+		return  Files.getChecksum(file , new java.util.zip.CRC32());
+	}
+
 	/**
 	 * 
 	 * @return

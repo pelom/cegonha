@@ -1,5 +1,7 @@
 package br.pelommedrado.transobj.server;
 
+import java.io.File;
+
 import org.apache.ftpserver.FtpServer;
 import org.apache.ftpserver.ftplet.FtpException;
 import org.slf4j.Logger;
@@ -17,7 +19,7 @@ import br.pelommedrado.trans.util.MapaSemente;
 public class ServidorFtp implements ISementeFtpletListener, InitializingBean {
 
 	/** Objeto de saida de mensagens no console. */
-	private Logger logger = LoggerFactory.getLogger(ServidorFtp.class);;
+	private Logger logger = LoggerFactory.getLogger(ServidorFtp.class);
 
 	/** Servidor FTP **/
 	private FtpServer ftpServer = null;
@@ -39,8 +41,8 @@ public class ServidorFtp implements ISementeFtpletListener, InitializingBean {
 	 * 
 	 */
 	@Override
-	public void terminoDownLoad(String endereco, String nomeArquivo) {
-		logger.info("termino do download endereco:" + endereco + " arquivo:" + nomeArquivo);
+	public void terminoDownLoad(String endereco, File arquivo) {
+		logger.info("termino do download endereco:" + endereco + " arquivo:" + arquivo);
 
 		count--;
 
@@ -48,14 +50,14 @@ public class ServidorFtp implements ISementeFtpletListener, InitializingBean {
 		final Semente semente = new Semente(endereco);
 
 		//adicionar novo semente
-		mapaSemente.addSemente(nomeArquivo, semente);
+		mapaSemente.addSemente(arquivo.getName(), semente);
 	}
 
 	/**
 	 * 
 	 */
 	@Override
-	public void iniciandoDownload(String endereco, String nomeArquivo) {
+	public void iniciandoDownload(String endereco, File arquivo) {
 		// TODO Auto-generated method stub
 		count++;
 	}
@@ -104,8 +106,6 @@ public class ServidorFtp implements ISementeFtpletListener, InitializingBean {
 	public void afterPropertiesSet() throws Exception {
 		Assert.notNull(ftpServer, "ftpServer required"); 
 		Assert.notNull(mapaSemente, "mapaSemente required");
-
-		start();
 	}
 
 	/**

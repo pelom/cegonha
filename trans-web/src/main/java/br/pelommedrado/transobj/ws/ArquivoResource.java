@@ -12,6 +12,8 @@ import javax.ws.rs.core.Response;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.context.support.SpringBeanAutowiringSupport;
 
+import com.sun.jersey.spi.resource.Singleton;
+
 import br.pelommedrado.trans.model.RequisicaoArquivo;
 import br.pelommedrado.trans.model.Semente;
 import br.pelommedrado.trans.util.MapaSemente;
@@ -21,6 +23,7 @@ import br.pelommedrado.transobj.server.ServidorFtp;
  * @author Andre Leite
  */
 @Path("/arquivo")
+@Singleton
 public class ArquivoResource extends SpringBeanAutowiringSupport {
 
 	/** Maximo de conexao para download**/

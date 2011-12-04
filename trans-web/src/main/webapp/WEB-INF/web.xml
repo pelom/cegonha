@@ -18,7 +18,11 @@
 			org.springframework.web.context.ContextLoaderListener
 		</listener-class>
 	</listener>
-
+	
+	<listener>
+        <listener-class>br.pelommedrado.transobj.server.FtpServerListener</listener-class>
+    </listener>
+    
 	<servlet>
 		<servlet-name>Jersey Servlet</servlet-name>
 		<servlet-class>com.sun.jersey.spi.container.servlet.ServletContainer</servlet-class>

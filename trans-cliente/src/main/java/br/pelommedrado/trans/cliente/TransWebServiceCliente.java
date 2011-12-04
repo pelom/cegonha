@@ -23,6 +23,12 @@ public class TransWebServiceCliente {
 	/** Cliente web service **/
 	private ClienteWs clienteWs = null;
 
+	/** Nome do web service **/
+	private String nomeWs = null;
+
+	/** Porta do web service **/
+	private String porta = null;
+
 	/**
 	 * 
 	 * @param server
@@ -32,6 +38,20 @@ public class TransWebServiceCliente {
 
 		//criar cliente
 		clienteWs = new ClienteWs(server);
+	}
+
+	/**
+	 * 
+	 * @param ip
+	 * @return
+	 */
+	public String formataUrl(String ip) {
+		return  new StringBuffer("http://").
+				append(ip).
+				append(":").
+				append(porta).
+				append("/").
+				append(nomeWs).toString();
 	}
 
 	/**
@@ -72,5 +92,33 @@ public class TransWebServiceCliente {
 		path(ARQUIVO).
 		path("registrar-arquivo").path(arquivo).
 		accept(MediaType.TEXT_XML).get(Response.class);
+	}
+
+	/**
+	 * @return the nomeWs
+	 */
+	public String getNomeWs() {
+		return nomeWs;
+	}
+
+	/**
+	 * @param nomeWs the nomeWs to set
+	 */
+	public void setNomeWs(String nomeWs) {
+		this.nomeWs = nomeWs;
+	}
+
+	/**
+	 * @return the porta
+	 */
+	public String getPorta() {
+		return porta;
+	}
+
+	/**
+	 * @param porta the porta to set
+	 */
+	public void setPorta(String porta) {
+		this.porta = porta;
 	}
 }

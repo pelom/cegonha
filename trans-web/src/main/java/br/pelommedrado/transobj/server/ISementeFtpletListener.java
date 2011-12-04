@@ -3,6 +3,8 @@
  */
 package br.pelommedrado.transobj.server;
 
+import java.io.File;
+
 /**
  * @author Andre Leite
  */
@@ -14,18 +16,18 @@ public interface ISementeFtpletListener {
 	 * @param endereco
 	 * 		Endereco do cliente que recebeu o arquivo no download
 	 * 
-	 * @param nomeArquivo
-	 * 		Nome do arquivo
+	 * @param arquivo
+	 * 		objeto File arquivo
 	 */
-	public void terminoDownLoad(String endereco, String nomeArquivo);
+	public void terminoDownLoad(String endereco, File arquivo);
 
 	/**
 	 * Metodo executado apos o inicio de um download
 	 * @param endereco
 	 * 		Endereco do cliente que recebeu o arquivo no download
 	 * 
-	 * @param nomeArquivo
-	 * 		Nome do arquivo
+	 * @param arquivo
+	 * 		objeto File arquivo
 	 */
-	public void iniciandoDownload(String endereco, String nomeArquivo);
+	public void iniciandoDownload(String endereco, File arquivo);
 }

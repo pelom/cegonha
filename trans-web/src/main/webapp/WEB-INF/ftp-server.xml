@@ -14,15 +14,6 @@
              http://mina.apache.org/ftpserver/spring/v1
              http://mina.apache.org/ftpserver/ftpserver-1.0.xsd ">
 
-	<beans:bean id="dataSource"
-		class="org.springframework.jdbc.datasource.DriverManagerDataSource">
-		<beans:property name="driverClassName" value="org.postgresql.Driver" />
-		<beans:property name="url"
-			value="jdbc:postgresql://localhost:5432/transobj" />
-		<beans:property name="username" value="postgres" />
-		<beans:property name="password" value="123456" />
-	</beans:bean>
-
 	<beans:bean id="appServer" class="br.pelommedrado.transobj.server.ServidorFtp" scope="singleton">
 		<beans:property name="ftpServer" ref="server" />
 		<beans:property name="mapaSemente" ref="mapaSemente" />
@@ -37,90 +28,12 @@
 			<ftplet name="ftplet1">
 				<beans:bean class="br.pelommedrado.transobj.server.SementeFtplet">
 					<beans:property name="listener" ref="appServer"/>
+					<beans:property name="pathBase" value="${pasta.root.download}"/>
 				</beans:bean>
 			</ftplet>
 		</ftplets>
 	
-		<db-user-manager encrypt-passwords="clear">
-			<data-source>
-				<beans:ref bean="dataSource" />
-			</data-source>
-
-			<insert-user>
-				INSERT INTO FTP_USER ( 
-					  user_id
-					, user_password
-					, home_directory
-					, enable_flag
-					, write_permission
-					, idle_time
-					, upload_rate
-					, download_rate ) 
-					VALUES ('{userid}', '{userpassword}', '{homedirectory}', 
-							'{enableflag}', '{writepermission}', {idletime}, {uploadrate}, {downloadrate})
-			</insert-user>
-
-			<update-user>
-				UPDATE FTP_USER SET 
-					  user_password='{userpassword}'
-					, home_directory='{homedirectory}'
-					, enable_flag={enableflag}
-					, write_permission={writepermission}
-					, idle_time={idletime}
-					, upload_rate={uploadrate}
-					, download_rate={downloadrate}
-				
-				WHERE
-					user_id='{userid}'
-			</update-user>
-
-			<delete-user>
-				DELETE FROM FTP_USER WHERE user_id = '{userid}'
-			</delete-user>
-
-			<select-user>
-				SELECT 
-					  user_id as userid
-					, 100000 as maxloginperip 
-					, 100000 as maxloginnumber
-					, user_password as userpassword
-					, '${pasta.root.download}' || user_id as homedirectory
-					, true as enableflag
-					, true as writepermission
-					, true as readpermission
-					, 100000 as idletime
-					, 100000 as uploadrate
-					, 100000 as downloadrate 
-				
-				FROM 
-					FTP_USER WHERE user_id = '{userid}'
-			</select-user>
-
-			<select-all-users>
-				SELECT 
-					user_id 
-				FROM 
-					FTP_USER ORDER BY user_id
-			</select-all-users>
-
-			<is-admin>
-				SELECT 
-					user_id as userid 
-				
-				FROM FTP_USER 
-				WHERE user_id='{userid}' AND user_id='admin'
-			</is-admin>
-
-			<authenticate>
-				SELECT 
-					user_password as userpassword 
-				
-				FROM FTP_USER
-				WHERE user_id='{userid}'
-			</authenticate>
-
-		</db-user-manager>
-
+		<file-user-manager file="users.properties"/>
 		<native-filesystem case-insensitive="false" create-home="true" />
 	</server>
 </beans:beans>

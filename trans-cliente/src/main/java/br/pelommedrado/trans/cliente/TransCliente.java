@@ -3,9 +3,11 @@
  */
 package br.pelommedrado.trans.cliente;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
+import java.util.Stack;
 
 import org.apache.commons.net.ftp.FTPClient;
 import org.slf4j.Logger;
@@ -13,6 +15,7 @@ import org.slf4j.LoggerFactory;
 
 import br.pelommedrado.trans.model.RequisicaoArquivo;
 import br.pelommedrado.trans.model.Semente;
+import br.pelommedrado.trans.util.FileUtils;
 
 /**
  * @author Andre Leite
@@ -22,16 +25,16 @@ public class TransCliente {
 	/** Gerenciador de logs **/
 	private static Logger logger = LoggerFactory.getLogger(TransFtpCliente.class);
 
-	/** Cliente Web service **/
+	/** Cliente Web service servidor **/
 	private TransWebServiceCliente wsServidor = null;
 
 	/** Cliente Web service local **/
 	private TransWebServiceCliente wsLocal = null;
 
-	/** usuario **/
+	/** Login do usuario **/
 	private String usuarioFtp = "";
 
-	/** senha **/
+	/** Senha do usuario **/
 	private String senhaFtp = "";
 
 	/** Servidor **/
@@ -57,28 +60,80 @@ public class TransCliente {
 	 * 
 	 * @param arquivos
 	 * @return
-	 * @throws IOException 
 	 */
-	public void obterArquivos(List<String> arquivos) throws IOException {
+	public boolean obterArquivos(List<String> arquivos) {
 		logger.info("obter lista de arquivos");
 
 		//varrer os arquivos
 		for (String arquivo : arquivos) {
+
 			//obter lista de semente
 			final List<Semente> sementes = 
 					wsServidor.obterSemente(arquivo);
 
 			//encontrar semente que obter o arquivo
-			final Semente semente = encontrarSemente(sementes, arquivo);
+			final Stack<Semente> pilhaSemente = obterSementeAtiva(sementes, arquivo);
 
-			//realizar o download do arquivo
-			baixarArquivo(semente, arquivo);
-
-			if(wsLocal != null) {
-				//registrar o arquivo para servi
-				wsLocal.registrarNovoArquivo(arquivo);
+			//iniciar processo de download
+			if(!iniciarProcesso(pilhaSemente, arquivo)) {
+				return false;
 			}
 		}
+
+		return true;
+	}
+
+	/**
+	 * 
+	 * @param pilhaSemente
+	 * @param arquivo
+	 * @return
+	 */
+	private boolean iniciarProcesso(Stack<Semente> pilhaSemente, String arquivo) {
+		logger.info("inciando o processo de download do arquivo:" + arquivo);
+
+		boolean download = false;
+		Semente semente = null;
+
+		do {
+			logger.debug("selecionando semente...");
+
+			//nao a sementes ativas?
+			if(pilhaSemente.isEmpty()) {
+				logger.debug("usar a semente servidora");
+
+				//usar a semente servidora
+				semente = new Semente();
+				semente.setEndereco(servidorFtp);
+
+			} else {
+				logger.debug("obter semente da pilha");
+
+				//obter uma semente da pilha
+				semente = pilhaSemente.pop();
+
+			}
+
+			//realizar o download do arquivo
+			download = baixarArquivo(semente, arquivo);
+
+			if(download) {
+				logger.debug("download concluido com sucesso");
+
+				if(wsLocal != null) {
+					//registrar o arquivo para servi
+					wsLocal.registrarNovoArquivo(arquivo);
+				}
+
+			} else {
+				logger.warn("nao foi possivel baixa dessa semente:" + semente);
+
+			}
+
+			//o download nao foi concluido e a pilha nao esta vazia?
+		} while(!download && !pilhaSemente.isEmpty());
+
+		return download;
 	}
 
 	/**
@@ -86,8 +141,10 @@ public class TransCliente {
 	 * @param sementes
 	 * @param arquivo
 	 */
-	private Semente encontrarSemente(List<Semente> sementes, String arquivo) {
+	private Stack<Semente> obterSementeAtiva(List<Semente> sementes, String arquivo) {
 		logger.info("iniciando a busca por semente que obtenha o arquivo:" + arquivo);
+
+		final Stack<Semente> sementesAtiva = new Stack<Semente>();
 
 		TransWebServiceCliente wsSemente = null;
 
@@ -97,18 +154,19 @@ public class TransCliente {
 		//varrer sementes
 		for (Semente semente : sementes) {
 			//criar novo cliente web service
-			wsSemente = new TransWebServiceCliente(semente.getEndereco());
+			wsSemente = new TransWebServiceCliente(wsServidor.formataUrl(semente.getEndereco()));
 
 			//verificar se a semente tem o arquivo
 			final RequisicaoArquivo response = wsSemente.isArquivo(arquivo);
 
 			// a semente tem o arquivo?
 			if(response.isTemArquivo() && response.isDisponivel()) {
-				return semente;
+				//sementes ativas
+				sementesAtiva.push(semente);
 			}
 		}
 
-		return null;
+		return sementesAtiva;
 	}
 
 	/**
@@ -117,7 +175,7 @@ public class TransCliente {
 	 * @param arquivo
 	 * @throws IOException 
 	 */
-	private void baixarArquivo(Semente semente, String arquivo) throws IOException {
+	private boolean baixarArquivo(Semente semente, String arquivo) {
 		//endereco 
 		String endereco = servidorFtp;
 
@@ -136,18 +194,36 @@ public class TransCliente {
 			//conectar ao servidor
 			ftp = tfSemente.conectar(endereco, portaFtp, usuarioFtp, senhaFtp);
 
+			//arquivo de saida
+			String fileOut = dirOut + File.separator + arquivo;
+			//arquivo de entrada
+			String fileIn = dirRemoto + File.separator + arquivo;
+
 			//baixar arquivo
-			tfSemente.download(ftp, dirRemoto, dirOut, arquivo);
+			boolean download = tfSemente.download(ftp, fileIn, fileOut);
+
+			if(download) {
+				final String chechsum = ftp.getStatus().split(" ")[1].trim();
+				logger.debug("chechsum:" + chechsum);
+
+				if(FileUtils.isCorrompido(fileOut, Long.valueOf(chechsum))) {
+					logger.warn("O arquivo esta corrompido " + fileOut);
+
+					download = false;
+				}
+			}
+
+			return download;
 
 		} catch (IOException e) {
 			logger.error("Nao foi possivel conectar a semente", e);
 
-			throw e;
+			return false;
 
 		} finally {
-
-			if(ftp != null) {
+			if(ftp != null && ftp.isConnected()) {
 				try {
+					ftp.logout();
 					ftp.disconnect();
 
 				} catch (IOException e1) {

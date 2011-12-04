@@ -1,12 +1,17 @@
 package br.pelommedrado.transobj.server;
 
+import java.io.File;
 import java.io.IOException;
 
+import org.apache.ftpserver.ftplet.DefaultFtpReply;
 import org.apache.ftpserver.ftplet.DefaultFtplet;
 import org.apache.ftpserver.ftplet.FtpException;
+import org.apache.ftpserver.ftplet.FtpReply;
 import org.apache.ftpserver.ftplet.FtpRequest;
 import org.apache.ftpserver.ftplet.FtpSession;
 import org.apache.ftpserver.ftplet.FtpletResult;
+
+import br.pelommedrado.trans.util.FileUtils;
 
 /**
  * @author Andre Leite
@@ -15,6 +20,9 @@ public class SementeFtplet extends DefaultFtplet {
 
 	/** Ouvinte de eventos do servidor **/
 	private ISementeFtpletListener listener; 
+
+	/** Path base **/
+	private String pathBase;
 
 	/**
 	 * Construtor da classe.
@@ -30,17 +38,25 @@ public class SementeFtplet extends DefaultFtplet {
 	public FtpletResult onDownloadEnd(FtpSession session, FtpRequest request) 
 			throws FtpException, IOException {
 
+		FtpletResult retVal = FtpletResult.DEFAULT;
+
 		//obter endereco do cliente
 		final String endereco = session.getClientAddress().getAddress().getHostAddress();
 		//nome do arquivo que foi baixado
 		final String nomeArquivo = request.getArgument();
-
+		final File file = new File(pathBase + nomeArquivo);
 		synchronized (listener) {
 			//notificar ouvinte
-			listener.terminoDownLoad(endereco, nomeArquivo);
+			listener.terminoDownLoad(endereco, file);
 		}
 
-		return super.onDownloadEnd(session, request);
+		//gerar chechsum
+		long checksum = FileUtils.gerarChecksum(file);
+
+		session.write(new DefaultFtpReply(
+				FtpReply.REPLY_200_COMMAND_OKAY, String.valueOf(checksum)));
+
+		return retVal;
 	}
 
 	/* (non-Javadoc)
@@ -57,9 +73,9 @@ public class SementeFtplet extends DefaultFtplet {
 
 		synchronized (listener) {
 			//notificar ouvinte
-			listener.iniciandoDownload(endereco, nomeArquivo);
+			listener.iniciandoDownload(endereco, new File(nomeArquivo));
 		}
-		
+
 		return super.onDownloadStart(session, request);
 	}
 
@@ -75,5 +91,19 @@ public class SementeFtplet extends DefaultFtplet {
 	 */
 	public void setListener(ISementeFtpletListener listener) {
 		this.listener = listener;
+	}
+
+	/**
+	 * @return the pathBase
+	 */
+	public String getPathBase() {
+		return pathBase;
+	}
+
+	/**
+	 * @param pathBase the pathBase to set
+	 */
+	public void setPathBase(String pathBase) {
+		this.pathBase = pathBase;
 	}
 }
