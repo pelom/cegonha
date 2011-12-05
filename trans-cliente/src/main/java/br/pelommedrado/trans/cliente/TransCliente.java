@@ -205,26 +205,13 @@ public class TransCliente {
 			//conectar ao servidor
 			ftp = tfSemente.conectar(endereco, portaFtp, usuarioFtp, senhaFtp);
 
-			//arquivo de saida
-			String fileOut = dirOut + File.separator + arquivo;
-			//arquivo de entrada
-			String fileIn = dirRemoto + File.separator + arquivo;
+			//arquivo local
+			String fileLocal = dirOut + File.separator + arquivo;
+			//arquivo remoto
+			String fileRemoto = dirRemoto + File.separator + arquivo;
 
 			//baixar arquivo
-			boolean download = tfSemente.download(ftp, fileIn, fileOut);
-
-			/*if(download) {
-				final String chechsum = ftp.getStatus().split(" ")[1].trim();
-				logger.debug("chechsum:" + chechsum);
-
-				if(FileUtils.isCorrompido(fileOut, Long.valueOf(chechsum))) {
-					logger.warn("O arquivo esta corrompido " + fileOut);
-
-					download = false;
-				}
-			}*/
-
-			return download;
+			return tfSemente.download(ftp, fileRemoto, fileLocal);
 
 		} catch (IOException e) {
 			logger.error("Nao foi possivel conectar a semente", e);

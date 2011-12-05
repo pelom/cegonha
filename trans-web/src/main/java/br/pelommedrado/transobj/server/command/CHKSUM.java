@@ -2,12 +2,10 @@ package br.pelommedrado.transobj.server.command;
 
 import java.io.File;
 import java.io.IOException;
-import java.net.InetAddress;
 import java.util.zip.CRC32;
 import java.util.zip.CheckedInputStream;
 
 import org.apache.ftpserver.command.AbstractCommand;
-import org.apache.ftpserver.ftplet.DataConnectionFactory;
 import org.apache.ftpserver.ftplet.DefaultFtpReply;
 import org.apache.ftpserver.ftplet.FtpException;
 import org.apache.ftpserver.ftplet.FtpFile;
@@ -15,7 +13,6 @@ import org.apache.ftpserver.ftplet.FtpReply;
 import org.apache.ftpserver.ftplet.FtpRequest;
 import org.apache.ftpserver.impl.FtpIoSession;
 import org.apache.ftpserver.impl.FtpServerContext;
-import org.apache.ftpserver.impl.IODataConnectionFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -88,23 +85,6 @@ public class CHKSUM extends AbstractCommand {
 					FtpReply.REPLY_550_REQUESTED_ACTION_NOT_TAKEN, pChk.getArquivo()));
 
 			return;
-		}
-
-		// 24-10-2007 - added check if PORT or PASV is issued, see
-		// https://issues.apache.org/jira/browse/FTPSERVER-110
-		//TODO move this block of code into the super class. Also, it makes 
-		//sense to have this as the first check before checking everything 
-		//else such as the file and its permissions.  
-		DataConnectionFactory connFactory = session.getDataConnection();
-		if (connFactory instanceof IODataConnectionFactory) {
-			InetAddress address = ((IODataConnectionFactory) connFactory)
-					.getInetAddress();
-			if (address == null) {
-				session.write(new DefaultFtpReply(
-						FtpReply.REPLY_503_BAD_SEQUENCE_OF_COMMANDS,
-						"PORT or PASV must be issued first"));
-				return;
-			}
 		}
 
 		long checksum = -1;

@@ -1,16 +1,15 @@
 package br.pelommedrado.trans.cliente;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.net.SocketException;
 
 import org.apache.commons.net.ftp.FTPClient;
-import org.apache.commons.net.ftp.FTPFile;
 import org.apache.commons.net.ftp.FTPReply;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import br.pelommedrado.trans.util.DownloadManager;
+import br.pelommedrado.trans.download.DownloadManager;
+import br.pelommedrado.trans.download.FtpFileChecksum;
 
 /**
  * @author Andre Leite
@@ -68,12 +67,12 @@ public class TransFtpCliente {
 	/**
 	 * 
 	 * @param ftp
-	 * @param fileIn
-	 * @param fileOut
+	 * @param fileRemoto
+	 * @param fileLocal
 	 * @return
 	 * @throws IOException
 	 */
-	public boolean download(FTPClient ftp, String fileIn, String fileOut) 
+	public boolean download(FTPClient ftp, String fileRemoto, String fileLocal) 
 			throws IOException {
 
 		//a conexao nao esta ativa? 
@@ -83,21 +82,39 @@ public class TransFtpCliente {
 
 		logger.debug("baixando o arquivo...");
 
-		//obter as informacoes do arquivo a serem baixado
-		final FTPFile[] remoteFiles = ftp.listFiles(fileIn);
-		//tamanho do arquivo
-		final long length = remoteFiles[0].getSize();
-		//obter entrada de dados
-		final InputStream in = ftp.retrieveFileStream(fileIn);
+		ftp.setFileType(FTPClient.BINARY_FILE_TYPE);
 
 		//iniciar o gerenciador de download
 		final DownloadManager downloadManager = 
-				new DownloadManager(ftp, fileIn, in, fileOut, length);
+				new DownloadManager(ftp.retrieveFileStream(fileRemoto), fileLocal);
 
 		//iniciar o download gerenciado.
-		downloadManager.iniciar();
+		downloadManager.download();
 
-		//download completado
-		return ftp.completePendingCommand();
+		//download completou?
+		if(ftp.completePendingCommand()) {
+			//criar verificador de arquivo
+			final FtpFileChecksum fCheck = new FtpFileChecksum(fileLocal, fileRemoto);
+
+			//o arquivo esta corrompido?
+			if(fCheck.isFileCorrompido(ftp)) {
+				//obter pacotes corrompidos
+				fCheck.obterPacoteCorrompido(ftp);
+
+				//foi possivel identificar pacotes corrompidos?
+				if(fCheck.isPacoteCorrompido()) {
+
+				} else {
+					throw new IOException("nao e possivel recuperar o arquivo");
+				}
+
+			} else {
+				return true;
+
+			}
+
+		}
+
+		return false;
 	} 
 }
