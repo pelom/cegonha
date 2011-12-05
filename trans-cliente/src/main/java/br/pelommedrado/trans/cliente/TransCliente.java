@@ -15,7 +15,6 @@ import org.slf4j.LoggerFactory;
 
 import br.pelommedrado.trans.model.RequisicaoArquivo;
 import br.pelommedrado.trans.model.Semente;
-import br.pelommedrado.trans.util.FileUtils;
 
 /**
  * @author Andre Leite
@@ -93,26 +92,10 @@ public class TransCliente {
 		logger.info("inciando o processo de download do arquivo:" + arquivo);
 
 		boolean download = false;
-		Semente semente = null;
 
 		do {
-			logger.debug("selecionando semente...");
-
-			//nao a sementes ativas?
-			if(pilhaSemente.isEmpty()) {
-				logger.debug("usar a semente servidora");
-
-				//usar a semente servidora
-				semente = new Semente();
-				semente.setEndereco(servidorFtp);
-
-			} else {
-				logger.debug("obter semente da pilha");
-
-				//obter uma semente da pilha
-				semente = pilhaSemente.pop();
-
-			}
+			//selecionar uma semente para download
+			final Semente semente = selecionarSemente(pilhaSemente);	
 
 			//realizar o download do arquivo
 			download = baixarArquivo(semente, arquivo);
@@ -134,6 +117,34 @@ public class TransCliente {
 		} while(!download && !pilhaSemente.isEmpty());
 
 		return download;
+	}
+
+	/**
+	 * 
+	 * @param pilhaSemente
+	 * @return
+	 */
+	private Semente selecionarSemente(Stack<Semente> pilhaSemente) {
+		logger.debug("selecionando semente...");
+		Semente semente = null;
+
+		//nao a sementes ativas?
+		if(pilhaSemente.isEmpty()) {
+			logger.debug("usar a semente servidora");
+
+			//usar a semente servidora
+			semente = new Semente();
+			semente.setEndereco(servidorFtp);
+
+		} else {
+			logger.debug("obter semente da pilha");
+
+			//obter uma semente da pilha
+			semente = pilhaSemente.pop();
+
+		}
+
+		return semente;
 	}
 
 	/**
@@ -202,7 +213,7 @@ public class TransCliente {
 			//baixar arquivo
 			boolean download = tfSemente.download(ftp, fileIn, fileOut);
 
-			if(download) {
+			/*if(download) {
 				final String chechsum = ftp.getStatus().split(" ")[1].trim();
 				logger.debug("chechsum:" + chechsum);
 
@@ -211,7 +222,7 @@ public class TransCliente {
 
 					download = false;
 				}
-			}
+			}*/
 
 			return download;
 

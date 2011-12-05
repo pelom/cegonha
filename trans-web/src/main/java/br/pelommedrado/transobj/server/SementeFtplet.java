@@ -3,15 +3,11 @@ package br.pelommedrado.transobj.server;
 import java.io.File;
 import java.io.IOException;
 
-import org.apache.ftpserver.ftplet.DefaultFtpReply;
 import org.apache.ftpserver.ftplet.DefaultFtplet;
 import org.apache.ftpserver.ftplet.FtpException;
-import org.apache.ftpserver.ftplet.FtpReply;
 import org.apache.ftpserver.ftplet.FtpRequest;
 import org.apache.ftpserver.ftplet.FtpSession;
 import org.apache.ftpserver.ftplet.FtpletResult;
-
-import br.pelommedrado.trans.util.FileUtils;
 
 /**
  * @author Andre Leite
@@ -49,12 +45,6 @@ public class SementeFtplet extends DefaultFtplet {
 			//notificar ouvinte
 			listener.terminoDownLoad(endereco, file);
 		}
-
-		//gerar chechsum
-		long checksum = FileUtils.gerarChecksum(file);
-
-		session.write(new DefaultFtpReply(
-				FtpReply.REPLY_200_COMMAND_OKAY, String.valueOf(checksum)));
 
 		return retVal;
 	}

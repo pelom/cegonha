@@ -12,11 +12,18 @@ import java.io.InputStream;
 import java.io.RandomAccessFile;
 import java.util.Properties;
 
+import org.apache.commons.net.ftp.FTPClient;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 /**
  * @author Andre Leite
  */
 public class DownloadManager {
-	// Max size of download buffer.
+	/** Objeto de saida de mensagens no console. */
+	private Logger logger = LoggerFactory.getLogger(DownloadManager.class);
+
+	/** Max size of download buffer.*/
 	private static final int MAX_BUFFER_SIZE = 1024;
 
 	/** donwload ativo **/
@@ -31,6 +38,9 @@ public class DownloadManager {
 	/** download com erro **/
 	public static final int ERROR = 3;
 
+	/** Classe responsavel por ler o estado do download **/
+	private Properties props = new Properties();
+
 	/** Arquivo de controle **/
 	private File fileData = null;
 
@@ -41,7 +51,7 @@ public class DownloadManager {
 	private int downloaded; 
 
 	/** Situacao do download **/
-	private int status; 
+	private int status = -1; 
 
 	/** Path de saida dos dados baixados **/
 	private String pathOut;
@@ -49,9 +59,11 @@ public class DownloadManager {
 	/** Entrada de dados **/
 	private InputStream in = null;
 
-	/** Classe responsavel por ler o estado do download **/
-	private Properties props = new Properties();
+	/** Cliente FTP **/
+	private FTPClient ftp;
 
+	/** Arquivo de entrada **/
+	private String fileIn;
 	/**
 	 * 
 	 * @param args
@@ -64,6 +76,20 @@ public class DownloadManager {
 
 		DownloadManager download = new DownloadManager(in, "/home/pelom/test.zip", file.length());
 		download.iniciar();
+	}
+
+	/**
+	 * 
+	 * @param ftp
+	 * @param in
+	 * @param pathOut
+	 * @param length
+	 */
+	public DownloadManager(FTPClient ftp, String fileIn, InputStream in, String pathOut, long length) {
+		this(in, pathOut, length);
+
+		this.ftp = ftp;
+		this.fileIn = fileIn;
 	}
 
 	/**
@@ -85,7 +111,6 @@ public class DownloadManager {
 		this.pathOut = pathOut;
 		this.downloaded = 0;
 		this.size = (int) length;
-		this.status = DOWNLOADING;
 	}
 
 	/**
@@ -106,8 +131,8 @@ public class DownloadManager {
 			size = Integer.valueOf(props.getProperty("size"));
 			//indice corrente
 			downloaded = Integer.valueOf(props.getProperty("download"));
-
-			status = DOWNLOADING;
+			//situacao
+			status = Integer.valueOf(props.getProperty("status"));
 
 			fi.close();
 
@@ -115,8 +140,12 @@ public class DownloadManager {
 			//criar arquivo de controle
 			fileData.createNewFile();
 
+			this.status = DOWNLOADING;
+
 			//salvar dados
 			salvar();
+
+
 		}
 
 		baixar();
@@ -129,6 +158,7 @@ public class DownloadManager {
 	private void salvar() throws IOException {
 		props.setProperty("size", String.valueOf(size));
 		props.setProperty("download", String.valueOf(downloaded));
+		props.setProperty("status", String.valueOf(status));
 
 		final FileOutputStream fo = new FileOutputStream(fileData);
 		props.store(fo, "parametros de controle do download");
@@ -180,15 +210,46 @@ public class DownloadManager {
 					break;
 				}
 
-				// Write buffer to file.
-				fileOut.write(buffer, 0, read);
+				if(ftp != null) {
+					//enviar o comando
+					ftp.sendCommand(ParseChecksumCommand.CHECKSUM,
+							ParseChecksumCommand.parse(fileIn, downloaded, read));
 
-				downloaded += read;
+					//if(ftp.doCommand(ParseChecksumCommand.CHECKSUM,
+					//		ParseChecksumCommand.parse(fileIn, downloaded, read))) {
 
-				salvar();
+					final String checksum = ftp.getStatus().split(" ")[1].trim();
+
+					//bloco nao esta corrompido?
+					if(!FileUtils.isCorrompido(buffer, Long.valueOf(checksum))) {
+						// Write buffer to file.
+						fileOut.write(buffer, 0, read);
+
+						downloaded += read;
+
+						salvar();
+
+					} else {
+						logger.debug("bloco corropindo");
+
+						in.skip(downloaded);
+
+					}
+					//}
+
+				} else {
+					// Write buffer to file.
+					fileOut.write(buffer, 0, read);
+
+					downloaded += read;
+
+					salvar();
+				}
 			}
 
-			fileData.delete();
+			if(status == COMPLETE) {
+				fileData.delete();
+			}
 
 		} finally {
 			// Close file.
@@ -199,11 +260,11 @@ public class DownloadManager {
 			}
 
 			// Close connection to server.
-			//if (in != null) {
-			//	try {
-			//		in.close();
-			//	} catch (Exception e) {}
-			//}
+			if (in != null) {
+				try {
+					in.close();
+				} catch (Exception e) {}
+			}
 		}
 	}
 }

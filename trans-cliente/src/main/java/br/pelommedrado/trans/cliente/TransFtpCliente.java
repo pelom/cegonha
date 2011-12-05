@@ -92,7 +92,7 @@ public class TransFtpCliente {
 
 		//iniciar o gerenciador de download
 		final DownloadManager downloadManager = 
-				new DownloadManager(in, fileOut, length);
+				new DownloadManager(ftp, fileIn, in, fileOut, length);
 
 		//iniciar o download gerenciado.
 		downloadManager.iniciar();

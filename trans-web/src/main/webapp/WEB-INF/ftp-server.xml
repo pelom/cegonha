@@ -32,8 +32,15 @@
 				</beans:bean>
 			</ftplet>
 		</ftplets>
-	
+		
 		<file-user-manager file="users.properties"/>
 		<native-filesystem case-insensitive="false" create-home="true" />
+		
+		<commands>
+			<command name="CHECKSUM">
+				<beans:bean class="br.pelommedrado.transobj.server.command.CHKSUM">
+				</beans:bean>
+			</command>
+		</commands>
 	</server>
 </beans:beans>

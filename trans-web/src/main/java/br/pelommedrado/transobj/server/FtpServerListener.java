@@ -34,7 +34,7 @@ import org.springframework.web.context.support.WebApplicationContextUtils;
 public class FtpServerListener implements ServletContextListener {
 
 	/** Objeto de saida de mensagens no console. */
-	private Logger logger = LoggerFactory.getLogger(FtpServerListener.class);;
+	private Logger logger = LoggerFactory.getLogger(FtpServerListener.class);
 
 	public static final String FTPSERVER_CONTEXT_NAME = "org.apache.ftpserver";
 
