@@ -10,6 +10,7 @@ import org.slf4j.LoggerFactory;
 
 import br.pelommedrado.trans.download.DownloadManager;
 import br.pelommedrado.trans.download.FtpFileChecksum;
+import br.pelommedrado.trans.download.FtpFileRecupera;
 
 /**
  * @author Andre Leite
@@ -67,6 +68,18 @@ public class TransFtpCliente {
 	/**
 	 * 
 	 * @param ftp
+	 * @throws IOException
+	 */
+	public void desconectar(FTPClient ftp) throws IOException {
+		if(ftp != null && ftp.isConnected()) {
+			ftp.logout();
+			ftp.disconnect();
+		}
+	}
+	
+	/**
+	 * 
+	 * @param ftp
 	 * @param fileRemoto
 	 * @param fileLocal
 	 * @return
@@ -82,7 +95,7 @@ public class TransFtpCliente {
 
 		logger.debug("baixando o arquivo...");
 
-		ftp.setFileType(FTPClient.BINARY_FILE_TYPE);
+		//ftp.setFileType(FTPClient.BINARY_FILE_TYPE);
 
 		//iniciar o gerenciador de download
 		final DownloadManager downloadManager = 
@@ -95,15 +108,22 @@ public class TransFtpCliente {
 		if(ftp.completePendingCommand()) {
 			//criar verificador de arquivo
 			final FtpFileChecksum fCheck = new FtpFileChecksum(fileLocal, fileRemoto);
-
+			
 			//o arquivo esta corrompido?
 			if(fCheck.isFileCorrompido(ftp)) {
+				
 				//obter pacotes corrompidos
-				fCheck.obterPacoteCorrompido(ftp);
-
+				fCheck.scaniarPacoteCorrompido(ftp);
+				
 				//foi possivel identificar pacotes corrompidos?
 				if(fCheck.isPacoteCorrompido()) {
-
+					ftp.setFileType(FTPClient.BINARY_FILE_TYPE);
+					
+					final FtpFileRecupera fRecuperar = 
+							new FtpFileRecupera(fCheck.getDownloadFile());
+					
+					fRecuperar.recuperar(ftp.retrieveFileStream(fileRemoto));
+					
 				} else {
 					throw new IOException("nao e possivel recuperar o arquivo");
 				}

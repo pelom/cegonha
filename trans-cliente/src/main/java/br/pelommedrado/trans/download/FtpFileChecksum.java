@@ -11,7 +11,6 @@ import org.apache.commons.net.ftp.FTPReply;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import br.pelommedrado.trans.cliente.TransFtpCliente;
 import br.pelommedrado.trans.util.FileUtils;
 import br.pelommedrado.trans.util.ParseChecksumCommand;
 
@@ -24,40 +23,6 @@ public class FtpFileChecksum {
 
 	/** Representacao do arquivo baixado **/
 	private FileDownload downloadFile = null;
-
-	public static void main(String[] args) {
-		//criar cliente FTP
-		final TransFtpCliente tfSemente = new TransFtpCliente();
-
-		FTPClient ftp = null;
-
-		try {
-			//conectar ao servidor
-			ftp = tfSemente.conectar("localhost", 2121, "anonymous", "");
-
-			String fileLocal = "/home/pelom/andre.rar";
-			String fileRemoto = "andre.rar";
-
-			FtpFileChecksum fCheck = new FtpFileChecksum(fileLocal, fileRemoto);
-			fCheck.obterPacoteCorrompido(ftp);
-
-			System.out.println(fCheck.isPacoteCorrompido());
-		} catch (IOException e) {
-			logger.error("Nao foi possivel conectar a semente", e);
-
-		} finally {
-			if(ftp != null && ftp.isConnected()) {
-				try {
-					ftp.logout();
-					ftp.disconnect();
-
-				} catch (IOException e1) {
-					logger.error("erro ao desconectar da semente", e1);
-				}
-			}
-
-		}
-	}
 
 	/**
 	 * 
@@ -76,7 +41,7 @@ public class FtpFileChecksum {
 	 */
 	public boolean isFileCorrompido(FTPClient ftp) throws IOException {
 		//a conexao nao esta ativa? 
-		if(!FTPReply.isPositiveCompletion(ftp.getReplyCode())) {
+		if(!ftp.isConnected()) {
 			throw new IOException("a conexao nao esta ativa");  
 		}
 
@@ -104,9 +69,11 @@ public class FtpFileChecksum {
 	 * @throws NumberFormatException 
 	 * @throws IOException 
 	 */
-	public void obterPacoteCorrompido(FTPClient ftp) throws IOException {
+	public void scaniarPacoteCorrompido(FTPClient ftp) throws IOException {
+		logger.info("scaniar pacotes corrompidos");
+
 		//a conexao nao esta ativa? 
-		if(!FTPReply.isPositiveCompletion(ftp.getReplyCode())) {
+		if(!ftp.isConnected()) {
 			throw new IOException("a conexao nao esta ativa");  
 		}
 
@@ -160,6 +127,8 @@ public class FtpFileChecksum {
 			}
 
 		} finally {
+			logger.debug(downloadFile.getPacotes().size() + " pacotes encontrados");
+
 			if(fileIn != null) {
 				fileIn.close();
 			}

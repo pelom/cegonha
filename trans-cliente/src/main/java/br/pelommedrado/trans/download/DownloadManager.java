@@ -40,21 +40,7 @@ public class DownloadManager {
 
 	/** Entrada de dados **/
 	private InputStream in = null;
-
-	/**
-	 * 
-	 * @param args
-	 * @throws IOException
-	 */
-	public static void main(String[] args) throws IOException {
-		String stg = "/home/pelom/Área de trabalho/andre.rar";
-		File file = new File(stg);
-		FileInputStream in = new FileInputStream(file);
-
-		DownloadManager download = new DownloadManager(in, "/home/pelom/andre.rar");
-		download.download();
-	}
-
+	
 	/**
 	 * Construtor da classe.
 	 * 

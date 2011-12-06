@@ -43,4 +43,12 @@ public class PacoteMal {
 	public int getLen() {
 		return len;
 	}
+
+	/* (non-Javadoc)
+	 * @see java.lang.Object#toString()
+	 */
+	@Override
+	public String toString() {
+		return "PacoteMal [off=" + off + ", len=" + len + "]";
+	}
 }

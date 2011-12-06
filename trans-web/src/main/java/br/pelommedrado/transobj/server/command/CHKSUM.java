@@ -1,11 +1,11 @@
 package br.pelommedrado.transobj.server.command;
 
-import java.io.File;
 import java.io.IOException;
 import java.util.zip.CRC32;
 import java.util.zip.CheckedInputStream;
 
 import org.apache.ftpserver.command.AbstractCommand;
+import org.apache.ftpserver.filesystem.nativefs.impl.NativeFtpFile;
 import org.apache.ftpserver.ftplet.DefaultFtpReply;
 import org.apache.ftpserver.ftplet.FtpException;
 import org.apache.ftpserver.ftplet.FtpFile;
@@ -119,16 +119,19 @@ public class CHKSUM extends AbstractCommand {
 
 			//checksum arquivo
 		} else if(pChk.getTipoVericacao() == ParseChecksumCommand.CHECKSUM_ARQUIVO) {
-			try {
-				checksum = FileUtils.gerarChecksum(new File(file.getAbsolutePath()));
+			if(file instanceof NativeFtpFile) {
+				NativeFtpFile nFile = (NativeFtpFile) file;
+				try {
+					checksum = FileUtils.gerarChecksum(nFile.getPhysicalFile());
 
-			} catch (Exception e) {
-				logger.debug("Exception getting file object", e);
+				} catch (Exception e) {
+					logger.debug("Exception getting file object", e);
 
-				session.write(new DefaultFtpReply(
-						FtpReply.REPLY_501_SYNTAX_ERROR_IN_PARAMETERS_OR_ARGUMENTS, request.getArgument()));
+					session.write(new DefaultFtpReply(
+							FtpReply.REPLY_501_SYNTAX_ERROR_IN_PARAMETERS_OR_ARGUMENTS, request.getArgument()));
 
-				return;
+					return;
+				}
 			}
 		}
 
