@@ -38,8 +38,11 @@
 		
 		<commands>
 			<command name="CHECKSUM">
-				<beans:bean class="br.pelommedrado.transobj.server.command.CHKSUM">
-				</beans:bean>
+				<beans:bean class="br.pelommedrado.transobj.server.command.CHKSUM"/>
+			</command>
+			
+			<command name="GETPKG">
+				<beans:bean class="br.pelommedrado.transobj.server.command.GETPKG"/>
 			</command>
 		</commands>
 	</server>

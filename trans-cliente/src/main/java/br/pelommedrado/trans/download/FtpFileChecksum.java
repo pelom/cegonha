@@ -39,7 +39,7 @@ public class FtpFileChecksum {
 	 * @param ftp
 	 * @throws IOException
 	 */
-	public boolean isFileCorrompido(FTPClient ftp) throws IOException {
+	public boolean verificarFileCorrompido(FTPClient ftp) throws IOException {
 		//a conexao nao esta ativa? 
 		if(!ftp.isConnected()) {
 			throw new IOException("a conexao nao esta ativa");  
@@ -78,16 +78,16 @@ public class FtpFileChecksum {
 		}
 
 		FileInputStream fileIn = null;
+		//buffer de leitura
+		byte[] buffer = new byte[DownloadManager.MAX_BUFFER_SIZE];
+		//bytes lidos
+		int read = 0;
+		//posicao corrente
+		int off = 0;
+
 		try {
 			//abrir o arquivo
 			fileIn = new FileInputStream(downloadFile.getFileLocal());
-
-			//buffer de leitura
-			byte[] buffer = new byte[DownloadManager.MAX_BUFFER_SIZE];
-			//bytes lidos
-			int read = 0;
-			//posicao corrente
-			int off = 0;
 
 			while ((read = fileIn.read(buffer)) != -1) {
 				//enviar requisicao do chechsum
@@ -98,7 +98,7 @@ public class FtpFileChecksum {
 				if(FTPReply.isPositiveCompletion(ftp.getReplyCode())) {
 
 					//obter o valor retornado
-					final String checksum = ftp.getReplyString().split(" ")[1].trim();
+					final long checksum = ParseChecksumCommand.parseChecksum(ftp.getReplyString());
 
 					//os dados lidos sao menor que o buffer?
 					if(read != buffer.length) {

@@ -6,7 +6,6 @@ package br.pelommedrado.trans.download;
 import static org.junit.Assert.assertEquals;
 
 import java.io.IOException;
-import java.io.RandomAccessFile;
 
 import org.apache.commons.net.ftp.FTPClient;
 import org.junit.After;
@@ -46,6 +45,11 @@ public class FtpFileRecuperaTest {
 
 		fileLocal = "/home/pelom/Capture_20111205.wmv";
 		fileRemoto = "Capture_20111205.wmv";
+
+		//baixar o arquivo.
+		DownloadManager download =  new DownloadManager(ftp, fileLocal, fileRemoto);
+		//download concluido?
+		assertEquals(true, download.download());
 	}
 
 	/**
@@ -56,26 +60,18 @@ public class FtpFileRecuperaTest {
 		tfSemente.desconectar(ftp);
 	}
 
+	/**
+	 * 
+	 * @throws IOException
+	 */
 	@Test
 	public void testRecuperacaoFile() throws IOException {
-		//baixar o arquivo.
-		ftp.setFileType(FTPClient.BINARY_FILE_TYPE);
-		DownloadManager download = new DownloadManager(
-				ftp.retrieveFileStream(fileRemoto), fileLocal);
-		download.download();
-		//download concluido?
-		assertEquals(true, ftp.completePendingCommand());
-
-		//===================================================
-
 		fCheck = new FtpFileChecksum(fileLocal, fileRemoto);
 		//nao ocorreu erro no download?
-		assertEquals(false, fCheck.isFileCorrompido(ftp));
-
-		//===================================================
+		assertEquals(false, fCheck.verificarFileCorrompido(ftp));
 
 		//corromper o arquivo
-		corromperArquivo();
+		DownloadManagerTest.corromperArquivo(fileLocal, new int[]{0, 5, 10}, DownloadManager.MAX_BUFFER_SIZE);
 
 		fCheck.scaniarPacoteCorrompido(ftp);
 		//arquivo foi corrompido?
@@ -83,25 +79,15 @@ public class FtpFileRecuperaTest {
 
 		//===================================================
 
-		ftp.setFileType(FTPClient.BINARY_FILE_TYPE);
-		FtpFileRecupera fRecuperar = new FtpFileRecupera(fCheck.getDownloadFile());
-		fRecuperar.recuperar(ftp.retrieveFileStream(fileRemoto));
+		FtpFileRecupera fRecuperar = new FtpFileRecupera(ftp, fCheck.getDownloadFile());
+		assertEquals(3, fRecuperar.recuperar());
 
 		//===================================================
-
-		tfSemente.desconectar(ftp);
-		ftp = tfSemente.conectar("localhost", 2121, "anonymous", "");
 
 		fCheck = new FtpFileChecksum(fileLocal, fileRemoto);
 		fCheck.scaniarPacoteCorrompido(ftp);
 
 		assertEquals(false, fCheck.isPacoteCorrompido());
-	}
-
-	private void corromperArquivo() throws IOException {
-		RandomAccessFile fileOut =  new RandomAccessFile(fileLocal, "rw");
-		byte[] buf = new byte[1024];
-		fileOut.write(buf);
-		fileOut.close();
+		assertEquals(false, fCheck.verificarFileCorrompido(ftp));
 	}
 }

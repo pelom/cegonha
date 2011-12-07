@@ -3,10 +3,12 @@
  */
 package br.pelommedrado.trans.util;
 
+import org.springframework.expression.ParseException;
+
 /**
  * @author Andre Leite
  */
-public class ParseChecksumCommand {
+public class ParseChecksumCommand extends ParseGetpkgCommand {
 
 	/** Nome do comando **/
 	public static final String CHECKSUM = "CHECKSUM";
@@ -17,25 +19,14 @@ public class ParseChecksumCommand {
 	/** Verificacao de arquivo **/
 	public static final int CHECKSUM_ARQUIVO = 1;
 
-	/** Arquivo **/
-	private String arquivo = null;
-
 	/** Tipo de verificacao **/
 	private int tipoVericacao = CHECKSUM_BLOCO;
-
-	/** inicio da leitura **/
-	private int off = 0;
-
-	/** Quantidade **/
-	private int len = 0;
 
 	/**
 	 * 
 	 * @param argumento
 	 */
 	public ParseChecksumCommand(String argumento) {
-		super();
-
 		//recuperar argumentos
 		final String[] args = argumento.split(" ");
 
@@ -46,6 +37,24 @@ public class ParseChecksumCommand {
 			this.off = Integer.valueOf(args[2]);
 			this.len = Integer.valueOf(args[3]);
 		}
+	}
+
+	/**
+	 * 
+	 * @param reply
+	 * @return
+	 */
+	public static long parseChecksum(String reply) {
+		long checksum = -1;
+
+		try {
+			checksum = Long.valueOf(reply.split(" ")[1].trim());
+
+		} catch (Exception e) {
+			throw new ParseException(1, reply);
+		}
+
+		return checksum;
 	}
 
 	/**
@@ -70,30 +79,9 @@ public class ParseChecksumCommand {
 	}
 
 	/**
-	 * @return the arquivo
-	 */
-	public String getArquivo() {
-		return arquivo;
-	}
-
-	/**
 	 * @return the tipoVericacao
 	 */
 	public int getTipoVericacao() {
 		return tipoVericacao;
-	}
-
-	/**
-	 * @return the off
-	 */
-	public int getOff() {
-		return off;
-	}
-
-	/**
-	 * @return the len
-	 */
-	public int getLen() {
-		return len;
 	}	
 }

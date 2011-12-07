@@ -76,7 +76,7 @@ public class TransFtpCliente {
 			ftp.disconnect();
 		}
 	}
-	
+
 	/**
 	 * 
 	 * @param ftp
@@ -95,35 +95,36 @@ public class TransFtpCliente {
 
 		logger.debug("baixando o arquivo...");
 
-		//ftp.setFileType(FTPClient.BINARY_FILE_TYPE);
-
 		//iniciar o gerenciador de download
 		final DownloadManager downloadManager = 
-				new DownloadManager(ftp.retrieveFileStream(fileRemoto), fileLocal);
-
-		//iniciar o download gerenciado.
-		downloadManager.download();
+				new DownloadManager(ftp, fileLocal, fileRemoto);
 
 		//download completou?
-		if(ftp.completePendingCommand()) {
+		if(downloadManager.download()) {
 			//criar verificador de arquivo
 			final FtpFileChecksum fCheck = new FtpFileChecksum(fileLocal, fileRemoto);
-			
+
 			//o arquivo esta corrompido?
-			if(fCheck.isFileCorrompido(ftp)) {
-				
+			if(fCheck.verificarFileCorrompido(ftp)) {
+
 				//obter pacotes corrompidos
 				fCheck.scaniarPacoteCorrompido(ftp);
-				
+
 				//foi possivel identificar pacotes corrompidos?
 				if(fCheck.isPacoteCorrompido()) {
-					ftp.setFileType(FTPClient.BINARY_FILE_TYPE);
-					
+					//obter numero de pacotes corrompidos
+					int nPkg = fCheck.getDownloadFile().getPacotes().size();
+
 					final FtpFileRecupera fRecuperar = 
-							new FtpFileRecupera(fCheck.getDownloadFile());
-					
-					fRecuperar.recuperar(ftp.retrieveFileStream(fileRemoto));
-					
+							new FtpFileRecupera(ftp, fCheck.getDownloadFile());
+
+					//numero de pacotes recuperados e igual?
+					if(fRecuperar.recuperar() != nPkg) {
+						return false;
+					}
+
+					return true;
+
 				} else {
 					throw new IOException("nao e possivel recuperar o arquivo");
 				}

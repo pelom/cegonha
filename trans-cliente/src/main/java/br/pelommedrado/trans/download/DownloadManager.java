@@ -3,7 +3,6 @@
  */
 package br.pelommedrado.trans.download;
 
-import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -12,6 +11,7 @@ import java.io.InputStream;
 import java.io.RandomAccessFile;
 import java.util.Properties;
 
+import org.apache.commons.net.ftp.FTPClient;
 import org.apache.commons.net.io.CopyStreamException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -35,26 +35,33 @@ public class DownloadManager {
 	/**  Numero do bytes baixados **/
 	private long downloaded; 
 
-	/** Path de saida dos dados baixados **/
-	private String pathOut;
+	/** Arquivo local **/
+	private String fileLocal;
+
+	/** Arquivo remoto **/
+	private String fileRemoto;
 
 	/** Entrada de dados **/
-	private InputStream in = null;
-	
+	private FTPClient ftp = null;
+
 	/**
 	 * Construtor da classe.
 	 * 
-	 * @param in
-	 * 		Entrada padrao de dados
+	 * @param ftp
+	 * 		Cliente FTP
 	 * 
-	 * @param pathOut
-	 * 		Path para onde os dados seram descarregados
+	 * @param fileLocal
+	 * 		Arquivo local
+	 * 
+	 * @param fileRemoto
+	 * 		Arquivo remoto
 	 */
-	public DownloadManager(InputStream in, String pathOut) {
+	public DownloadManager(FTPClient ftp, String fileLocal, String fileRemoto) {
 		super();
 
-		this.in = new BufferedInputStream(in, MAX_BUFFER_SIZE);
-		this.pathOut = pathOut;
+		this.ftp = ftp;
+		this.fileLocal = fileLocal;
+		this.fileRemoto = fileRemoto;
 		this.downloaded = 0;
 	}
 
@@ -62,11 +69,11 @@ public class DownloadManager {
 	 * 
 	 * @throws IOException
 	 */
-	public void download() throws IOException {
+	public boolean download() throws IOException {
 		logger.debug("iniciando configuracoes dos dados baixados");
 
 		//arquivo de controle do download
-		fileData = new File(pathOut + ".trans");
+		fileData = new File(fileLocal + ".trans");
 
 		//o arquivo existe?
 		if(fileData.exists()) {
@@ -90,35 +97,41 @@ public class DownloadManager {
 			salvar();
 		}
 
-		baixar();
+		boolean ok =  baixar();
+		if(ok) {
+			fileData.delete();
+		}
+		return ok;
 	}
 
 	/**
 	 * @throws IOException 
 	 * 
 	 */
-	public void baixar() throws IOException {
+	private boolean baixar() throws IOException {
 		logger.debug("baixando os dados do servidor");
 
-		RandomAccessFile fileOut = null;
+		//configurar posicao de leitura
+		ftp.setRestartOffset(downloaded);
+		ftp.setFileType(FTPClient.BINARY_FILE_TYPE);
+
+		RandomAccessFile out = null;
+		InputStream in = null;
 		int bytes;
 		final byte[] buffer = new byte[MAX_BUFFER_SIZE];
 
 		try {
 			//abrir o arquivo
-			fileOut = new RandomAccessFile(pathOut, "rw");
-
+			out = new RandomAccessFile(fileLocal, "rw");
 			//configurar posicao de escrita
-			fileOut.seek(downloaded);
+			out.seek(downloaded);
 
-			//configurar posicao de leitura
-			in.skip(downloaded);
+			in = ftp.retrieveFileStream(fileRemoto);
 
 			while ((bytes = in.read(buffer)) != -1) {
 
 				// Technically, some read(byte[]) methods may return 0 and we cannot
 				// accept that as an indication of EOF.
-
 				if (bytes == 0) {
 
 					bytes = in.read();
@@ -127,23 +140,19 @@ public class DownloadManager {
 						break;
 					}
 
-					fileOut.write(bytes);
+					out.write(bytes);
 
 					++downloaded;
 
 					continue;
 				}
 
-				fileOut.write(buffer, 0, bytes);
+				out.write(buffer, 0, bytes);
 
 				downloaded += bytes;
 
 				salvar();
 			}
-
-			logger.debug("download concluido");
-
-			fileData.delete();
 
 		} catch (IOException e) {
 			throw new CopyStreamException(
@@ -151,19 +160,20 @@ public class DownloadManager {
 
 		} finally {
 			// Close file.
-			if (fileOut != null) {
+			if (out != null) {
 				try {
-					fileOut.close();
+					out.close();
 				} catch (Exception e) {}
 			}
 
-			// Close connection to server.
 			if (in != null) {
 				try {
 					in.close();
 				} catch (Exception e) {}
 			}
 		}
+
+		return ftp.completePendingCommand();
 	}
 
 	/**

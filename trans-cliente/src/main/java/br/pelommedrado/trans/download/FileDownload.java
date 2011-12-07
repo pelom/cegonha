@@ -6,7 +6,6 @@ package br.pelommedrado.trans.download;
 import java.util.ArrayList;
 import java.util.List;
 
-
 /**
  * @author Andre Leite
  */

@@ -14,13 +14,6 @@
 	<context:component-scan base-package="br.pelommedrado.transobj" />
 	<context:annotation-config/>
 	
-	<bean id="dataSource" class="org.springframework.jdbc.datasource.DriverManagerDataSource">
-		<property name="driverClassName" value="org.postgresql.Driver" />
-		<property name="url" value="jdbc:postgresql://localhost:5433/transobj" />
-		<property name="username" value="postgres" />
-		<property name="password" value="123456" />
-	</bean>
-	
 	<bean id="mapaSemente"
 		class="br.pelommedrado.trans.util.MapaSemente" scope="singleton">
 	</bean>
