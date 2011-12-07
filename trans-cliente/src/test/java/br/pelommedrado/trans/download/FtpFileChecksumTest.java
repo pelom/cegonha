@@ -7,7 +7,6 @@ import static org.junit.Assert.assertEquals;
 
 import java.io.IOException;
 
-import org.apache.commons.net.ftp.FTPClient;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -21,10 +20,7 @@ import br.pelommedrado.trans.cliente.TransFtpCliente;
 public class FtpFileChecksumTest {
 
 	/** criar cliente FTP **/
-	private TransFtpCliente tfSemente;
-
-	/** Cliente FTP **/
-	private FTPClient ftp;
+	private TransFtpCliente tFtpCliente;
 
 	/** Arquivo local **/
 	private String fileLocal;
@@ -42,13 +38,17 @@ public class FtpFileChecksumTest {
 	public void setUp() throws Exception {
 
 		//conectar ao servidor
-		tfSemente = new TransFtpCliente();
-		ftp = tfSemente.conectar("localhost", 2121, "anonymous", "");
+		tFtpCliente = new TransFtpCliente();
+		tFtpCliente.setServidor("localhost");
+		tFtpCliente.setPorta(2121);
+		tFtpCliente.setUsuario("anonymous");
+		tFtpCliente.setSenha("");
+		tFtpCliente.conectar();
 
 		fileLocal = "/home/pelom/Capture_20111205.wmv";
 		fileRemoto = "Capture_20111205.wmv";
 
-		final DownloadManager download =  new DownloadManager(ftp, fileLocal, fileRemoto);
+		final DownloadManager download =  new DownloadManager(tFtpCliente.getFtp(), fileLocal, fileRemoto);
 		assertEquals(true, download.download());
 	}
 
@@ -57,7 +57,7 @@ public class FtpFileChecksumTest {
 	 */
 	@After
 	public void tearDown() throws Exception {
-		tfSemente.desconectar(ftp);
+		tFtpCliente.desconectar();
 	}
 
 	/**
@@ -67,7 +67,7 @@ public class FtpFileChecksumTest {
 	@Test
 	public void testFileCorrompido() throws IOException {
 		fCheck = new FtpFileChecksum(fileLocal, fileRemoto);
-		assertEquals(false, fCheck.verificarFileCorrompido(ftp));
+		assertEquals(false, fCheck.verificarFileCorrompido(tFtpCliente.getFtp()));
 	}
 
 	/**
@@ -78,11 +78,11 @@ public class FtpFileChecksumTest {
 	public void testCorrompimentoTresPacote() throws IOException {
 		DownloadManagerTest.corromperArquivo(fileLocal, new int[]{0, 5, 10}, DownloadManager.MAX_BUFFER_SIZE);
 		fCheck = new FtpFileChecksum(fileLocal, fileRemoto);
-		fCheck.scaniarPacoteCorrompido(ftp);
+		fCheck.scaniarPacoteCorrompido(tFtpCliente.getFtp());
 
 		assertEquals(3, fCheck.getDownloadFile().getPacotes().size());
 	}
-	
+
 	/**
 	 * 
 	 * @throws IOException
@@ -91,7 +91,7 @@ public class FtpFileChecksumTest {
 	public void testPacoteCorrompido() throws IOException {
 		DownloadManagerTest.corromperArquivo(fileLocal, new int[]{0}, DownloadManager.MAX_BUFFER_SIZE);
 		fCheck = new FtpFileChecksum(fileLocal, fileRemoto);
-		fCheck.scaniarPacoteCorrompido(ftp);
+		fCheck.scaniarPacoteCorrompido(tFtpCliente.getFtp());
 
 		assertEquals(true, fCheck.isPacoteCorrompido());
 	}
@@ -103,7 +103,7 @@ public class FtpFileChecksumTest {
 	@Test
 	public void testPacoteNaoCorrompido() throws IOException {
 		fCheck = new FtpFileChecksum(fileLocal, fileRemoto);
-		fCheck.scaniarPacoteCorrompido(ftp);
+		fCheck.scaniarPacoteCorrompido(tFtpCliente.getFtp());
 
 		assertEquals(false, fCheck.isPacoteCorrompido());
 	}

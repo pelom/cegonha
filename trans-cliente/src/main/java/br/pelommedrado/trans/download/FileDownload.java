@@ -32,7 +32,7 @@ public class FileDownload {
 		this.fileRemoto = fileRemoto;
 		this.pacotes = new ArrayList<PacoteMal>();
 	}
-
+	
 	/**
 	 * 
 	 * @param pacote

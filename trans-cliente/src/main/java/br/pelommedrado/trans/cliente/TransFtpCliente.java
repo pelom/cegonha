@@ -19,8 +19,26 @@ public class TransFtpCliente {
 	/** Gerenciador de logs **/
 	private static Logger logger = LoggerFactory.getLogger(TransFtpCliente.class);
 
+	/** Tentar recuperar o arquivo caso esteja corrompido **/
+	private boolean recuperar = true;
+
+	/** Servidor **/
+	private String servidor = null;
+
+	/** Numero da porta **/
+	private int porta= -1;
+
+	/** Usuario do ftp **/
+	private String usuario = null;
+
+	/** Senha para logar no ftp **/
+	private String senha = null;
+
+	/** cliente ftp **/
+	private FTPClient ftp = null;
+
 	/**
-	 * 
+	 * Construtor da classe.
 	 */
 	public TransFtpCliente() {
 		super();
@@ -36,12 +54,13 @@ public class TransFtpCliente {
 	 * @throws SocketException
 	 * @throws IOException
 	 */
-	public FTPClient conectar(String servidor, int porta, String usuario, String senha) 
+	public boolean conectar() 
 			throws SocketException, IOException {
 
-		logger.info("iniciando a conexao com o servidor:"+ servidor + " porta:" + porta);
+		logger.info("iniciando conexao com o servidor:" + servidor + " porta:" + porta);
 
-		final FTPClient ftp = new FTPClient();  
+		//criar cliente ftp
+		ftp = new FTPClient();  
 
 		//estabelecar conexao
 		ftp.connect(servidor, porta);  
@@ -53,7 +72,7 @@ public class TransFtpCliente {
 			//realizar login
 			ftp.login(usuario, senha);  
 
-			return ftp;
+			return true;
 
 		} else {
 			logger.debug("nao foi possivel realizar a conexao ela foi recusada");
@@ -61,7 +80,7 @@ public class TransFtpCliente {
 			//erro ao se conectar  
 			ftp.disconnect();
 
-			return null;  
+			return false;  
 		}
 	}
 
@@ -70,10 +89,11 @@ public class TransFtpCliente {
 	 * @param ftp
 	 * @throws IOException
 	 */
-	public void desconectar(FTPClient ftp) throws IOException {
+	public void desconectar() throws IOException {
 		if(ftp != null && ftp.isConnected()) {
 			ftp.logout();
 			ftp.disconnect();
+			ftp = null;
 		}
 	}
 
@@ -85,7 +105,7 @@ public class TransFtpCliente {
 	 * @return
 	 * @throws IOException
 	 */
-	public boolean download(FTPClient ftp, String fileRemoto, String fileLocal) 
+	public boolean download(String fileRemoto, String fileLocal) 
 			throws IOException {
 
 		//a conexao nao esta ativa? 
@@ -104,38 +124,138 @@ public class TransFtpCliente {
 			//criar verificador de arquivo
 			final FtpFileChecksum fCheck = new FtpFileChecksum(fileLocal, fileRemoto);
 
-			//o arquivo esta corrompido?
+			//o arquivo esta corrompido e a recuperacao esta ativa?
 			if(fCheck.verificarFileCorrompido(ftp)) {
-
-				//obter pacotes corrompidos
-				fCheck.scaniarPacoteCorrompido(ftp);
-
-				//foi possivel identificar pacotes corrompidos?
-				if(fCheck.isPacoteCorrompido()) {
-					//obter numero de pacotes corrompidos
-					int nPkg = fCheck.getDownloadFile().getPacotes().size();
-
-					final FtpFileRecupera fRecuperar = 
-							new FtpFileRecupera(ftp, fCheck.getDownloadFile());
-
-					//numero de pacotes recuperados e igual?
-					if(fRecuperar.recuperar() != nPkg) {
-						return false;
-					}
-
-					return true;
-
-				} else {
-					throw new IOException("nao e possivel recuperar o arquivo");
-				}
+				//recuperar arquivo
+				return recuperarFile(fCheck);
 
 			} else {
 				return true;
 
 			}
-
 		}
 
 		return false;
+	}
+
+	/**
+	 * 
+	 * @param fCheck
+	 * @param ftp
+	 * @return
+	 * @throws IOException
+	 */
+	private boolean recuperarFile(final FtpFileChecksum fCheck) throws IOException {
+		if(!recuperar) {
+			return false;
+		}
+
+		logger.debug("preparar para recuperar o arquivo corrompido");
+
+		//scaniar os pacotes corrompidos
+		fCheck.scaniarPacoteCorrompido(ftp);
+
+		//foi possivel identificar pacotes corrompidos?
+		if(fCheck.isPacoteCorrompido()) {
+			//obter numero de pacotes corrompidos
+			int nPkg = fCheck.getDownloadFile().getPacotes().size();
+
+			final FtpFileRecupera fRecuperar = 
+					new FtpFileRecupera(ftp, fCheck.getDownloadFile());
+
+			//numero de pacotes recuperados e igual?
+			if(fRecuperar.recuperar() != nPkg) {
+				return false;
+			}
+
+			return true;
+
+		} else {
+			throw new IOException("nao foi possivel recuperar o arquivo");
+		}
+	}
+
+	/**
+	 * @return the recuperar
+	 */
+	public boolean isRecuperar() {
+		return recuperar;
+	}
+
+	/**
+	 * @param recuperar the recuperar to set
+	 */
+	public void setRecuperar(boolean recuperar) {
+		this.recuperar = recuperar;
+	}
+
+	/**
+	 * @return the servidor
+	 */
+	public String getServidor() {
+		return servidor;
+	}
+
+	/**
+	 * @return the porta
+	 */
+	public int getPorta() {
+		return porta;
+	}
+
+	/**
+	 * @return the usuario
+	 */
+	public String getUsuario() {
+		return usuario;
+	}
+
+	/**
+	 * @return the senha
+	 */
+	public String getSenha() {
+		return senha;
+	}
+
+	/**
+	 * @param servidor the servidor to set
+	 */
+	public void setServidor(String servidor) {
+		this.servidor = servidor;
+	}
+
+	/**
+	 * @param porta the porta to set
+	 */
+	public void setPorta(int porta) {
+		this.porta = porta;
+	}
+
+	/**
+	 * @param usuario the usuario to set
+	 */
+	public void setUsuario(String usuario) {
+		this.usuario = usuario;
+	}
+
+	/**
+	 * @param senha the senha to set
+	 */
+	public void setSenha(String senha) {
+		this.senha = senha;
+	}
+
+	/**
+	 * @return the ftp
+	 */
+	public FTPClient getFtp() {
+		return ftp;
+	}
+
+	/**
+	 * @param ftp the ftp to set
+	 */
+	public void setFtp(FTPClient ftp) {
+		this.ftp = ftp;
 	} 
 }

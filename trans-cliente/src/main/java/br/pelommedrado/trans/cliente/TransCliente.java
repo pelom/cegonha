@@ -9,7 +9,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Stack;
 
-import org.apache.commons.net.ftp.FTPClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -74,7 +73,7 @@ public class TransCliente {
 			final Stack<Semente> pilhaSemente = obterSementeAtiva(sementes, arquivo);
 
 			//iniciar processo de download
-			if(!iniciarProcesso(pilhaSemente, arquivo)) {
+			if(!processar(pilhaSemente, arquivo)) {
 				return false;
 			}
 		}
@@ -88,8 +87,8 @@ public class TransCliente {
 	 * @param arquivo
 	 * @return
 	 */
-	private boolean iniciarProcesso(Stack<Semente> pilhaSemente, String arquivo) {
-		logger.info("inciando o processo de download do arquivo:" + arquivo);
+	private boolean processar(Stack<Semente> pilhaSemente, String arquivo) {
+		logger.info("processar o download do arquivo:" + arquivo);
 
 		boolean download = false;
 
@@ -106,6 +105,7 @@ public class TransCliente {
 				if(wsLocal != null) {
 					//registrar o arquivo para servi
 					wsLocal.registrarNovoArquivo(arquivo);
+
 				}
 
 			} else {
@@ -190,28 +190,35 @@ public class TransCliente {
 		//endereco 
 		String endereco = servidorFtp;
 
+		//alguma semente foi encontrada?
 		if(semente != null) {
 			endereco = semente.getEndereco();
 		}
 
-		logger.info("baixando o arquivo:" + arquivo + " da semente:" + endereco);
+		logger.info("ativar o download  do arquivo:" + arquivo + " na semente:" + endereco);
 
 		//criar cliente FTP
 		final TransFtpCliente tfSemente = new TransFtpCliente();
-
-		FTPClient ftp = null;
+		tfSemente.setServidor(endereco);
+		tfSemente.setPorta(portaFtp);
+		tfSemente.setUsuario(usuarioFtp);
+		tfSemente.setSenha(senhaFtp);
 
 		try {
 			//conectar ao servidor
-			ftp = tfSemente.conectar(endereco, portaFtp, usuarioFtp, senhaFtp);
+			//conexao falhou?
+			if(!tfSemente.conectar()) {
+				return false;
+			}
 
 			//arquivo local
-			String fileLocal = dirOut + File.separator + arquivo;
+			final String fileLocal = dirOut + File.separator + arquivo;
+
 			//arquivo remoto
-			String fileRemoto = dirRemoto + File.separator + arquivo;
+			final String fileRemoto = dirRemoto + File.separator + arquivo;
 
 			//baixar arquivo
-			return tfSemente.download(ftp, fileRemoto, fileLocal);
+			return tfSemente.download(fileRemoto, fileLocal);
 
 		} catch (IOException e) {
 			logger.error("Nao foi possivel conectar a semente", e);
@@ -219,14 +226,11 @@ public class TransCliente {
 			return false;
 
 		} finally {
-			if(ftp != null && ftp.isConnected()) {
-				try {
-					ftp.logout();
-					ftp.disconnect();
+			try {
+				tfSemente.desconectar();
 
-				} catch (IOException e1) {
-					logger.error("erro ao desconectar da semente", e1);
-				}
+			} catch (IOException e1) {
+				logger.error("erro ao desconectar da semente", e1);
 			}
 
 		}

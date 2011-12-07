@@ -8,7 +8,6 @@ import static org.junit.Assert.assertEquals;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 
-import org.apache.commons.net.ftp.FTPClient;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -23,9 +22,6 @@ public class DownloadManagerTest {
 	/** criar cliente FTP **/
 	private TransFtpCliente tFtpCliente;
 
-	/** Cliente FTP **/
-	private FTPClient ftp;
-
 	/** Arquivo local **/
 	private String fileLocal;
 
@@ -39,7 +35,12 @@ public class DownloadManagerTest {
 	public void setUp() throws Exception {
 		//conectar ao servidor
 		tFtpCliente = new TransFtpCliente();
-		ftp = tFtpCliente.conectar("localhost", 2121, "anonymous", "");
+		tFtpCliente.setServidor("localhost");
+		tFtpCliente.setPorta(2121);
+		tFtpCliente.setUsuario("anonymous");
+		tFtpCliente.setSenha("");
+
+		tFtpCliente.conectar();
 
 		fileLocal = "/home/pelom/Capture_20111205.wmv";
 		fileRemoto = "Capture_20111205.wmv";
@@ -50,7 +51,7 @@ public class DownloadManagerTest {
 	 */
 	@After
 	public void tearDown() throws Exception {
-		tFtpCliente.desconectar(ftp);
+		tFtpCliente.desconectar();
 	}
 
 	/**
@@ -59,7 +60,7 @@ public class DownloadManagerTest {
 	 */
 	@Test
 	public void testDownload() throws IOException {
-		DownloadManager download = new DownloadManager(ftp, fileLocal, fileRemoto);
+		DownloadManager download = new DownloadManager(tFtpCliente.getFtp(), fileLocal, fileRemoto);
 		assertEquals(true, download.download());
 	}
 
