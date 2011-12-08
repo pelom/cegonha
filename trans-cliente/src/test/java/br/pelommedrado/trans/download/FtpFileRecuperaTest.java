@@ -47,7 +47,7 @@ public class FtpFileRecuperaTest {
 		fileRemoto = "Capture_20111205.wmv";
 
 		//baixar o arquivo.
-		DownloadManager download =  new DownloadManager(tFtpCliente.getFtp(), fileLocal, fileRemoto);
+		DownloadManager download =  new DownloadManager(tFtpCliente.getFtp(), fileLocal, fileRemoto, false);
 		//download concluido?
 		assertEquals(true, download.download());
 	}

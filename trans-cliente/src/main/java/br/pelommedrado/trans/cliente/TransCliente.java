@@ -29,17 +29,14 @@ public class TransCliente {
 	/** Cliente Web service local **/
 	private TransWebServiceCliente wsLocal = null;
 
-	/** Login do usuario **/
-	private String usuarioFtp = "";
+	/** Cliente ftp **/
+	private TransFtpCliente ftpCliente = null;
 
-	/** Senha do usuario **/
-	private String senhaFtp = "";
+	/** Tentar recuperar o arquivo caso esteja corrompido **/
+	private boolean recuperar = true;
 
 	/** Servidor **/
 	private String servidorFtp = null;
-
-	/** Numero de porta **/
-	private int portaFtp;
 
 	/** Diretorio de saida **/
 	private String dirOut = null;
@@ -197,17 +194,12 @@ public class TransCliente {
 
 		logger.info("ativar o download  do arquivo:" + arquivo + " na semente:" + endereco);
 
-		//criar cliente FTP
-		final TransFtpCliente tfSemente = new TransFtpCliente();
-		tfSemente.setServidor(endereco);
-		tfSemente.setPorta(portaFtp);
-		tfSemente.setUsuario(usuarioFtp);
-		tfSemente.setSenha(senhaFtp);
+		ftpCliente.setServidor(endereco);
 
 		try {
 			//conectar ao servidor
 			//conexao falhou?
-			if(!tfSemente.conectar()) {
+			if(!ftpCliente.conectar()) {
 				return false;
 			}
 
@@ -218,7 +210,7 @@ public class TransCliente {
 			final String fileRemoto = dirRemoto + File.separator + arquivo;
 
 			//baixar arquivo
-			return tfSemente.download(fileRemoto, fileLocal);
+			return ftpCliente.download(fileRemoto, fileLocal, recuperar);
 
 		} catch (IOException e) {
 			logger.error("Nao foi possivel conectar a semente", e);
@@ -227,7 +219,7 @@ public class TransCliente {
 
 		} finally {
 			try {
-				tfSemente.desconectar();
+				ftpCliente.desconectar();
 
 			} catch (IOException e1) {
 				logger.error("erro ao desconectar da semente", e1);
@@ -251,31 +243,10 @@ public class TransCliente {
 	}
 
 	/**
-	 * @return the usuarioFtp
-	 */
-	public String getUsuarioFtp() {
-		return usuarioFtp;
-	}
-
-	/**
-	 * @return the senhaFtp
-	 */
-	public String getSenhaFtp() {
-		return senhaFtp;
-	}
-
-	/**
 	 * @return the servidorFtp
 	 */
 	public String getServidorFtp() {
 		return servidorFtp;
-	}
-
-	/**
-	 * @return the portaFtp
-	 */
-	public int getPortaFtp() {
-		return portaFtp;
 	}
 
 	/**
@@ -307,31 +278,10 @@ public class TransCliente {
 	}
 
 	/**
-	 * @param usuarioFtp the usuarioFtp to set
-	 */
-	public void setUsuarioFtp(String usuarioFtp) {
-		this.usuarioFtp = usuarioFtp;
-	}
-
-	/**
-	 * @param senhaFtp the senhaFtp to set
-	 */
-	public void setSenhaFtp(String senhaFtp) {
-		this.senhaFtp = senhaFtp;
-	}
-
-	/**
 	 * @param servidorFtp the servidorFtp to set
 	 */
 	public void setServidorFtp(String servidorFtp) {
 		this.servidorFtp = servidorFtp;
-	}
-
-	/**
-	 * @param portaFtp the portaFtp to set
-	 */
-	public void setPortaFtp(int portaFtp) {
-		this.portaFtp = portaFtp;
 	}
 
 	/**
@@ -346,5 +296,33 @@ public class TransCliente {
 	 */
 	public void setDirRemoto(String dirRemoto) {
 		this.dirRemoto = dirRemoto;
+	}
+
+	/**
+	 * @return the ftpCliente
+	 */
+	public TransFtpCliente getFtpCliente() {
+		return ftpCliente;
+	}
+
+	/**
+	 * @return the recuperar
+	 */
+	public boolean isRecuperar() {
+		return recuperar;
+	}
+
+	/**
+	 * @param ftpCliente the ftpCliente to set
+	 */
+	public void setFtpCliente(TransFtpCliente ftpCliente) {
+		this.ftpCliente = ftpCliente;
+	}
+
+	/**
+	 * @param recuperar the recuperar to set
+	 */
+	public void setRecuperar(boolean recuperar) {
+		this.recuperar = recuperar;
 	}
 }

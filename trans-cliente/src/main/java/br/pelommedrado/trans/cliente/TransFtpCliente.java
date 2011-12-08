@@ -9,8 +9,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import br.pelommedrado.trans.download.DownloadManager;
-import br.pelommedrado.trans.download.FtpFileChecksum;
-import br.pelommedrado.trans.download.FtpFileRecupera;
 
 /**
  * @author Andre Leite
@@ -18,9 +16,6 @@ import br.pelommedrado.trans.download.FtpFileRecupera;
 public class TransFtpCliente {
 	/** Gerenciador de logs **/
 	private static Logger logger = LoggerFactory.getLogger(TransFtpCliente.class);
-
-	/** Tentar recuperar o arquivo caso esteja corrompido **/
-	private boolean recuperar = true;
 
 	/** Servidor **/
 	private String servidor = null;
@@ -46,10 +41,6 @@ public class TransFtpCliente {
 
 	/**
 	 * 
-	 * @param servidor
-	 * @param porta
-	 * @param usuario
-	 * @param senha
 	 * @return
 	 * @throws SocketException
 	 * @throws IOException
@@ -93,19 +84,20 @@ public class TransFtpCliente {
 		if(ftp != null && ftp.isConnected()) {
 			ftp.logout();
 			ftp.disconnect();
+
 			ftp = null;
 		}
 	}
 
 	/**
 	 * 
-	 * @param ftp
 	 * @param fileRemoto
 	 * @param fileLocal
+	 * @param recuperar
 	 * @return
 	 * @throws IOException
 	 */
-	public boolean download(String fileRemoto, String fileLocal) 
+	public boolean download(String fileRemoto, String fileLocal, boolean recuperar) 
 			throws IOException {
 
 		//a conexao nao esta ativa? 
@@ -117,76 +109,9 @@ public class TransFtpCliente {
 
 		//iniciar o gerenciador de download
 		final DownloadManager downloadManager = 
-				new DownloadManager(ftp, fileLocal, fileRemoto);
+				new DownloadManager(ftp, fileLocal, fileRemoto, recuperar);
 
-		//download completou?
-		if(downloadManager.download()) {
-			//criar verificador de arquivo
-			final FtpFileChecksum fCheck = new FtpFileChecksum(fileLocal, fileRemoto);
-
-			//o arquivo esta corrompido e a recuperacao esta ativa?
-			if(fCheck.verificarFileCorrompido(ftp)) {
-				//recuperar arquivo
-				return recuperarFile(fCheck);
-
-			} else {
-				return true;
-
-			}
-		}
-
-		return false;
-	}
-
-	/**
-	 * 
-	 * @param fCheck
-	 * @param ftp
-	 * @return
-	 * @throws IOException
-	 */
-	private boolean recuperarFile(final FtpFileChecksum fCheck) throws IOException {
-		if(!recuperar) {
-			return false;
-		}
-
-		logger.debug("preparar para recuperar o arquivo corrompido");
-
-		//scaniar os pacotes corrompidos
-		fCheck.scaniarPacoteCorrompido(ftp);
-
-		//foi possivel identificar pacotes corrompidos?
-		if(fCheck.isPacoteCorrompido()) {
-			//obter numero de pacotes corrompidos
-			int nPkg = fCheck.getDownloadFile().getPacotes().size();
-
-			final FtpFileRecupera fRecuperar = 
-					new FtpFileRecupera(ftp, fCheck.getDownloadFile());
-
-			//numero de pacotes recuperados e igual?
-			if(fRecuperar.recuperar() != nPkg) {
-				return false;
-			}
-
-			return true;
-
-		} else {
-			throw new IOException("nao foi possivel recuperar o arquivo");
-		}
-	}
-
-	/**
-	 * @return the recuperar
-	 */
-	public boolean isRecuperar() {
-		return recuperar;
-	}
-
-	/**
-	 * @param recuperar the recuperar to set
-	 */
-	public void setRecuperar(boolean recuperar) {
-		this.recuperar = recuperar;
+		return downloadManager.download();
 	}
 
 	/**

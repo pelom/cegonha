@@ -5,8 +5,11 @@ package br.pelommedrado.trans.download;
 
 import static org.junit.Assert.assertEquals;
 
+import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.RandomAccessFile;
+import java.util.Properties;
 
 import org.junit.After;
 import org.junit.Before;
@@ -59,8 +62,30 @@ public class DownloadManagerTest {
 	 * @throws IOException
 	 */
 	@Test
+	public void testDownloadContinuacao() throws IOException {
+		//arquivo de controle do download
+		File fileData = new File(fileLocal + DownloadManager.EXT_PROPERTIES);
+		fileData.createNewFile();
+
+		Properties props = new Properties();
+		props.setProperty("download", String.valueOf(0));
+
+		final FileOutputStream fo = new FileOutputStream(fileData);
+		props.store(fo, "parametros de controle do download");
+		fo.flush();
+		fo.close();
+
+		DownloadManager download = new DownloadManager(tFtpCliente.getFtp(), fileLocal, fileRemoto, true);
+		assertEquals(true, download.download());
+	}
+
+	/**
+	 * 
+	 * @throws IOException
+	 */
+	@Test
 	public void testDownload() throws IOException {
-		DownloadManager download = new DownloadManager(tFtpCliente.getFtp(), fileLocal, fileRemoto);
+		DownloadManager download = new DownloadManager(tFtpCliente.getFtp(), fileLocal, fileRemoto, true);
 		assertEquals(true, download.download());
 	}
 

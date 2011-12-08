@@ -26,6 +26,12 @@ public class DownloadManager {
 	/** Max size of download buffer.*/
 	public static final int MAX_BUFFER_SIZE = 1024;
 
+	/** Extensao do arquivo a ser manipulado **/
+	public static final String EXT_FILE = ".cegonha";
+
+	/** Extensao do arquivo de properties **/
+	public static final String EXT_PROPERTIES = ".trans";
+
 	/** Classe responsavel por ler o estado do download **/
 	private Properties props = new Properties();
 
@@ -44,6 +50,9 @@ public class DownloadManager {
 	/** Entrada de dados **/
 	private FTPClient ftp = null;
 
+	/** Tentar recuperar o arquivo caso esteja corrompido **/
+	private boolean recuperar = true;
+
 	/**
 	 * Construtor da classe.
 	 * 
@@ -55,14 +64,18 @@ public class DownloadManager {
 	 * 
 	 * @param fileRemoto
 	 * 		Arquivo remoto
+	 * 
+	 * @param recuperar
+	 * 		True para recuperar o arquivo caso corrompa
 	 */
-	public DownloadManager(FTPClient ftp, String fileLocal, String fileRemoto) {
+	public DownloadManager(FTPClient ftp, String fileLocal, String fileRemoto, boolean recuperar) {
 		super();
 
 		this.ftp = ftp;
 		this.fileLocal = fileLocal;
 		this.fileRemoto = fileRemoto;
 		this.downloaded = 0;
+		this.recuperar = recuperar;
 	}
 
 	/**
@@ -73,7 +86,7 @@ public class DownloadManager {
 		logger.debug("iniciando configuracoes dos dados baixados");
 
 		//arquivo de controle do download
-		fileData = new File(fileLocal + ".trans");
+		fileData = new File(fileLocal + EXT_PROPERTIES);
 
 		//o arquivo existe?
 		if(fileData.exists()) {
@@ -97,32 +110,49 @@ public class DownloadManager {
 			salvar();
 		}
 
-		boolean ok =  baixar();
-		if(ok) {
+		//arquivo copiado?
+		if(copiarFile()) {
 			fileData.delete();
+
+			//criar verificador de arquivo
+			final FtpFileChecksum fCheck = new FtpFileChecksum(fileLocal, fileRemoto);
+
+			//o arquivo esta corrompido?
+			if(fCheck.verificarFileCorrompido(ftp)) {
+				//recuperar arquivo
+				return recuperarFile(fCheck);
+
+			} else {
+				return true;
+
+			}
 		}
-		return ok;
+
+		return false;
 	}
 
 	/**
-	 * @throws IOException 
 	 * 
 	 */
-	private boolean baixar() throws IOException {
+	private boolean copiarFile() throws IOException {
 		logger.debug("baixando os dados do servidor");
 
 		//configurar posicao de leitura
 		ftp.setRestartOffset(downloaded);
 		ftp.setFileType(FTPClient.BINARY_FILE_TYPE);
 
+		//buffer de leitura
+		final byte[] buffer = new byte[MAX_BUFFER_SIZE];
+		//arquivo local
+		final File file = new File(fileLocal + EXT_FILE);
+
 		RandomAccessFile out = null;
 		InputStream in = null;
 		int bytes;
-		final byte[] buffer = new byte[MAX_BUFFER_SIZE];
 
 		try {
 			//abrir o arquivo
-			out = new RandomAccessFile(fileLocal, "rw");
+			out = new RandomAccessFile(file, "rw");
 			//configurar posicao de escrita
 			out.seek(downloaded);
 
@@ -155,6 +185,9 @@ public class DownloadManager {
 			}
 
 		} catch (IOException e) {
+			//remover arquivo
+			file.delete();
+
 			throw new CopyStreamException(
 					"IOException caught while copying.", downloaded, e);
 
@@ -173,7 +206,19 @@ public class DownloadManager {
 			}
 		}
 
-		return ftp.completePendingCommand();
+
+		boolean ok = ftp.completePendingCommand();
+		//download concluiu
+		if(ok) {
+			//renomear arquivo
+			file.renameTo(new File(fileLocal));
+
+		} else {
+			file.delete();
+
+		}
+
+		return ok;
 	}
 
 	/**
@@ -189,4 +234,40 @@ public class DownloadManager {
 		fo.close();
 	}
 
+	/**
+	 * 
+	 * @param fCheck
+	 * @param ftp
+	 * @return
+	 * @throws IOException
+	 */
+	private boolean recuperarFile(final FtpFileChecksum fCheck) throws IOException {
+		if(!recuperar) {
+			return false;
+		}
+
+		logger.debug("preparar para recuperar o arquivo corrompido");
+
+		//scaniar os pacotes corrompidos
+		fCheck.scaniarPacoteCorrompido(ftp);
+
+		//foi possivel identificar pacotes corrompidos?
+		if(fCheck.isPacoteCorrompido()) {
+			//obter numero de pacotes corrompidos
+			int nPkg = fCheck.getDownloadFile().getPacotes().size();
+
+			final FtpFileRecupera fRecuperar = 
+					new FtpFileRecupera(ftp, fCheck.getDownloadFile());
+
+			//numero de pacotes recuperados e igual?
+			if(fRecuperar.recuperar() != nPkg) {
+				return false;
+			}
+
+			return true;
+
+		} else {
+			throw new IOException("nao foi possivel recuperar o arquivo");
+		}
+	}
 }
