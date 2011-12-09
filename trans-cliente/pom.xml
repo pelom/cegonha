@@ -8,9 +8,7 @@
 		<groupId>br.pelommedrado</groupId>
 		<version>0.0.1-SNAPSHOT</version>
 	</parent>
-	<groupId>br.pelommedrado</groupId>
 	<artifactId>trans-cliente</artifactId>
-	<version>0.0.1-SNAPSHOT</version>
 	<name>trans-cliente</name>
 	<url>http://maven.apache.org</url>
 	<properties>

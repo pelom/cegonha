@@ -21,6 +21,7 @@ public class PropertiesUtil extends PropertyPlaceholderConfigurer {
 	 * 
 	 */
 	@Override
+	@SuppressWarnings("deprecation")
 	protected void processProperties(ConfigurableListableBeanFactory beanFactory, Properties props) 
 			throws BeansException {
 		super.processProperties(beanFactory, props);
@@ -31,7 +32,7 @@ public class PropertiesUtil extends PropertyPlaceholderConfigurer {
 			String keyStr = key.toString();
 
 			propertiesMap.put(keyStr, 
-					parseStringValue(props.getProperty(keyStr), props, new HashSet()));
+					parseStringValue(props.getProperty(keyStr), props, new HashSet<Object>()));
 		}
 	}
 

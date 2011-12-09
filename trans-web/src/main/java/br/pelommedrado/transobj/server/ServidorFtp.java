@@ -12,7 +12,6 @@ import org.springframework.util.Assert;
 import br.pelommedrado.trans.model.Semente;
 import br.pelommedrado.trans.util.MapaSemente;
 
-
 /**
  * @author Andre Leite
  */
