@@ -4,14 +4,14 @@
 	xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
 	<modelVersion>4.0.0</modelVersion>
 
-	<artifactId>trans-util</artifactId>
+	<artifactId>cegonha-util</artifactId>
 	<parent>
-		<artifactId>trans</artifactId>
+		<artifactId>cegonha</artifactId>
 		<groupId>br.pelommedrado</groupId>
 		<version>0.0.1-SNAPSHOT</version>
 	</parent>
 
-	<name>trans-util</name>
+	<name>cegonha-util</name>
 	<url>http://maven.apache.org</url>
 
 	<properties>

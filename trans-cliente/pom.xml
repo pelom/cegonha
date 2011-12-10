@@ -4,12 +4,12 @@
 	xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
 	<modelVersion>4.0.0</modelVersion>
 	<parent>
-		<artifactId>trans</artifactId>
+		<artifactId>cegonha</artifactId>
 		<groupId>br.pelommedrado</groupId>
 		<version>0.0.1-SNAPSHOT</version>
 	</parent>
-	<artifactId>trans-cliente</artifactId>
-	<name>trans-cliente</name>
+	<artifactId>cegonha-cliente</artifactId>
+	<name>cegonha-cliente</name>
 	<url>http://maven.apache.org</url>
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -19,6 +19,12 @@
 		<maven.compiler.target>1.6</maven.compiler.target>
 	</properties>
 	<dependencies>
+		<dependency>
+			<groupId>br.pelommedrado</groupId>
+			<artifactId>cegonha-util</artifactId>
+			<version>0.0.1-SNAPSHOT</version>
+		</dependency>
+		
 		<dependency>
 			<groupId>org.springframework</groupId>
 			<artifactId>spring-core</artifactId>
@@ -74,11 +80,6 @@
 			<groupId>org.slf4j</groupId>
 			<artifactId>slf4j-log4j12</artifactId>
 			<version>1.5.11</version>
-		</dependency>
-		<dependency>
-			<groupId>br.pelommedrado</groupId>
-			<artifactId>trans-util</artifactId>
-			<version>0.0.1-SNAPSHOT</version>
 		</dependency>
 		<dependency>
 			<groupId>junit</groupId>

@@ -20,7 +20,7 @@
 	</listener>
 	
 	<listener>
-        <listener-class>br.pelommedrado.transobj.server.FtpServerListener</listener-class>
+        <listener-class>br.pelommedrado.cegonha.server.FtpServerListener</listener-class>
     </listener>
     
 	<servlet>

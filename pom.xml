@@ -3,11 +3,11 @@
 	<modelVersion>4.0.0</modelVersion>
 
 	<groupId>br.pelommedrado</groupId>
-	<artifactId>trans</artifactId>
+	<artifactId>cegonha</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
 	<packaging>pom</packaging>
 
-	<name>trans</name>
+	<name>cegonha</name>
 	<url>http://maven.apache.org</url>
 
 	<properties>

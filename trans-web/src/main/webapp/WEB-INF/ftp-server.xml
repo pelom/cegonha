@@ -14,7 +14,7 @@
              http://mina.apache.org/ftpserver/spring/v1
              http://mina.apache.org/ftpserver/ftpserver-1.0.xsd ">
 
-	<beans:bean id="appServer" class="br.pelommedrado.transobj.server.ServidorFtp" scope="singleton">
+	<beans:bean id="appServer" class="br.pelommedrado.cegonha.server.ServidorFtp" scope="singleton">
 		<beans:property name="ftpServer" ref="server" />
 		<beans:property name="mapaSemente" ref="mapaSemente" />
 	</beans:bean>
@@ -26,7 +26,7 @@
 		
 		<ftplets>
 			<ftplet name="ftplet1">
-				<beans:bean class="br.pelommedrado.transobj.server.SementeFtplet">
+				<beans:bean class="br.pelommedrado.cegonha.server.SementeFtplet">
 					<beans:property name="listener" ref="appServer"/>
 					<beans:property name="pathBase" value="${pasta.root.download}"/>
 				</beans:bean>
@@ -38,11 +38,11 @@
 		
 		<commands>
 			<command name="CHECKSUM">
-				<beans:bean class="br.pelommedrado.transobj.server.command.CHKSUM"/>
+				<beans:bean class="br.pelommedrado.cegonha.server.command.CHKSUM"/>
 			</command>
 			
 			<command name="GETPKG">
-				<beans:bean class="br.pelommedrado.transobj.server.command.GETPKG"/>
+				<beans:bean class="br.pelommedrado.cegonha.server.command.GETPKG"/>
 			</command>
 		</commands>
 	</server>
