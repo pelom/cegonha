@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<beans:beans xmlns="http://mina.apache.org/ftpserver/spring/v1"
+	xmlns:beans="http://www.springframework.org/schema/beans" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:tx="http://www.springframework.org/schema/tx" xmlns:aop="http://www.springframework.org/schema/aop"
+	xsi:schemaLocation=" http://www.springframework.org/schema/beans
+             http://www.springframework.org/schema/beans/spring-beans-2.5.xsd
+             http://www.springframework.org/schema/tx
+             http://www.springframework.org/schema/tx/spring-tx-2.5.xsd
+             http://www.springframework.org/schema/aop
+             http://www.springframework.org/schema/aop/spring-aop-2.5.xsd
+             http://www.springframework.org/schema/lang
+             http://www.springframework.org/schema/lang/spring-lang-2.5.xsd
+             http://mina.apache.org/ftpserver/spring/v1
+             http://mina.apache.org/ftpserver/ftpserver-1.0.xsd ">
+
+	<beans:bean id="appServer" class="br.pelommedrado.cegonha.server.ServidorFtp" scope="singleton">
+		<beans:property name="ftpServer" ref="server" />
+		<beans:property name="mapaSemente" ref="mapaSemente" />
+	</beans:bean>
+
+	<server id="server" 
+			max-logins="500" 
+			max-anon-logins="500"
+			anon-enabled="true">
+		<listeners>
+			<nio-listener name="default" port="2121"></nio-listener>
+		</listeners>
+		
+		<ftplets>
+			<ftplet name="ftplet1">
+				<beans:bean class="br.pelommedrado.cegonha.server.SementeFtplet">
+					<beans:property name="listener" ref="appServer"/>
+					<beans:property name="pathBase" value="${pasta.root.download}"/>
+				</beans:bean>
+			</ftplet>
+		</ftplets>
+		
+		<file-user-manager file="users.properties"/>
+		<native-filesystem case-insensitive="false" create-home="true" />
+		
+		<commands>
+			<command name="CHECKSUM">
+				<beans:bean class="br.pelommedrado.cegonha.server.command.CHKSUM"/>
+			</command>
+			
+			<command name="GETPKG">
+				<beans:bean class="br.pelommedrado.cegonha.server.command.GETPKG"/>
+			</command>
+		</commands>
+	</server>
+</beans:beans>

@@ -18,9 +18,9 @@
 	</properties>
 
 	<modules>
-		<module>trans-web</module>
-		<module>trans-cliente</module>
-		<module>trans-util</module>
+		<module>cegonha-web</module>
+		<module>cegonha-cliente</module>
+		<module>cegonha-util</module>
 	</modules>
 
 	<build>
