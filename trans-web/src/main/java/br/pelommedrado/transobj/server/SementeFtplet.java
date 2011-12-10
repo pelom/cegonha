@@ -9,6 +9,8 @@ import org.apache.ftpserver.ftplet.FtpRequest;
 import org.apache.ftpserver.ftplet.FtpSession;
 import org.apache.ftpserver.ftplet.FtpletResult;
 
+import br.pelommedrado.transobj.server.listener.ISementeFtpletListener;
+
 /**
  * @author Andre Leite
  */

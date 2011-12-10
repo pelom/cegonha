@@ -3,10 +3,12 @@
  */
 package br.pelommedrado.trans.util;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Vector;
+import java.util.Set;
 
 import br.pelommedrado.trans.model.Semente;
 
@@ -43,12 +45,19 @@ public class MapaSemente {
 		//lista de semente nao existe?
 		if(sementes == null) {
 			//crair e adicionar a lista 
-			sementes = new Vector<Semente>();
-			mapa.put(key, sementes);
+			sementes = new ArrayList<Semente>();
+
+			mapa = Collections.synchronizedMap(mapa);
+			synchronized(mapa) {
+				mapa.put(key, sementes);
+			}
 		}
 
-		//adicionar semente
-		sementes.add(semente);
+		sementes = Collections.synchronizedList(sementes);
+		synchronized(sementes) {
+			//adicionar semente
+			sementes.add(semente);
+		}
 	}
 
 	/**
@@ -62,9 +71,101 @@ public class MapaSemente {
 
 		List<Semente> sementes = mapa.get(key);
 		if(sementes == null) {
-			sementes = new Vector<Semente>();
+			sementes = new ArrayList<Semente>();
 		}
 
 		return sementes;
+	}
+
+	/**
+	 * 
+	 * @param chave
+	 * @return
+	 */
+	public List<Semente> getListaSementesAtiva(String chave) {
+		List<Semente> sementes = getListaSementes(chave);
+
+		sementes = Collections.synchronizedList(sementes);
+
+		synchronized(sementes) {
+			if(sementes.isEmpty()) {
+				return sementes;
+			}
+
+			List<Semente> sementeAtiva = new ArrayList<Semente>();
+
+			for (Semente semente : sementes) {
+				if(semente.isAtiva()) {
+					sementeAtiva.add(semente);
+				}
+			}
+
+			return sementeAtiva;
+		}
+	}
+
+	/**
+	 * 
+	 */
+	public void verificarSementeAtiva() {
+		mapa = Collections.synchronizedMap(mapa);
+
+		synchronized(mapa) {
+			final Set<Integer> chaves = mapa.keySet();
+			//varrer as chaves
+			for (Integer integer : chaves) {
+				//lista de sementes
+				final List<Semente> sementes = mapa.get(integer);
+
+				for (Semente semente : sementes) {
+					semente.setAtiva(Utils.ping(semente.getEndereco()));		
+				}
+			}
+		}
+	}
+
+	/**
+	 * 
+	 */
+	public void removerSementeInativa() {
+		mapa = Collections.synchronizedMap(mapa);
+
+		synchronized(mapa) {
+			final Set<Integer> chaves = mapa.keySet();
+			//varrer as chaves
+			for (Integer integer : chaves) {
+				//lista de sementes
+				final List<Semente> sementes = mapa.get(integer);
+				final List<Semente> clone = new ArrayList<Semente>();
+				clone.addAll(sementes);
+				for (Semente semente : clone) {
+					if(!semente.isAtiva()) {
+						sementes.remove(semente);
+					}	
+				}
+			}
+		}
+	}
+	
+	/**
+	 * 
+	 */
+	public int size() {
+		int size = 0;
+		
+		mapa = Collections.synchronizedMap(mapa);
+
+		synchronized(mapa) {
+			final Set<Integer> chaves = mapa.keySet();
+			//varrer as chaves
+			for (Integer integer : chaves) {
+				//lista de sementes
+				final List<Semente> sementes = mapa.get(integer);
+			
+				size += sementes.size();
+			}
+		}
+		
+		return size;
 	}
 }

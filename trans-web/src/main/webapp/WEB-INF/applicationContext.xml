@@ -10,16 +10,42 @@
 		http://www.springframework.org/schema/mvc http://www.springframework.org/schema/mvc/spring-mvc-3.0.xsd
 	    http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx-3.0.xsd
 	    http://www.springframework.org/schema/aop http://www.springframework.org/schema/aop/spring-aop-3.0.xsd">
-	
+
 	<context:component-scan base-package="br.pelommedrado.transobj" />
-	<context:annotation-config/>
-	
-	<bean id="mapaSemente"
-		class="br.pelommedrado.trans.util.MapaSemente" scope="singleton">
+	<context:annotation-config />
+
+	<bean id="mapaSemente" class="br.pelommedrado.trans.util.MapaSemente"
+		scope="singleton">
 	</bean>
-	
+
 	<bean class="br.pelommedrado.trans.util.PropertiesUtil">
-		<property name="location" value="/WEB-INF/classes/config.properties"/>
+		<property name="location" value="/WEB-INF/classes/config.properties" />
 	</bean>
+
+	<!-- Tarefa para serem executadas  -->
 	
+	<bean id="schedulerTask"
+		class="org.springframework.scheduling.timer.MethodInvokingTimerTaskFactoryBean">
+		<property name="targetObject" ref="limparSementeTask" />
+		<property name="targetMethod" value="limpar" />
+	</bean>
+
+	<bean id="limparSementeTask" class="br.pelommedrado.transobj.task.LimparSementeTask">
+		<constructor-arg ref="mapaSemente" />
+	</bean>
+
+	<bean id="timerTask" class="org.springframework.scheduling.timer.ScheduledTimerTask">
+		<property name="timerTask" ref="schedulerTask" />
+		<property name="delay" value="${tempo.limpar.semente}" />
+		<property name="period" value="${tempo.limpar.semente}" />
+	</bean>
+
+	<bean class="org.springframework.scheduling.timer.TimerFactoryBean">
+		<property name="scheduledTimerTasks">
+			<list>
+				<ref local="timerTask" />
+			</list>
+		</property>
+	</bean>
+
 </beans>

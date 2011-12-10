@@ -17,6 +17,9 @@ public class Semente implements Serializable {
 	/** Endereco da semente **/
 	private String endereco = null;
 
+	/** Indica que a semente esta ativa **/
+	private boolean ativa = true;
+
 	/**
 	 * Construtor da classe
 	 */
@@ -48,6 +51,20 @@ public class Semente implements Serializable {
 	 */
 	public void setEndereco(String endereco) {
 		this.endereco = endereco;
+	}
+
+	/**
+	 * @return the ativa
+	 */
+	public boolean isAtiva() {
+		return ativa;
+	}
+
+	/**
+	 * @param ativa the ativa to set
+	 */
+	public void setAtiva(boolean ativa) {
+		this.ativa = ativa;
 	}
 
 	/* (non-Javadoc)
