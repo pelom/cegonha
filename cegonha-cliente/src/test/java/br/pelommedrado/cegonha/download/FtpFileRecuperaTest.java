@@ -7,14 +7,13 @@ import static org.junit.Assert.assertEquals;
 
 import java.io.IOException;
 
+import org.apache.commons.net.ftp.FTPClient;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.mockito.Mockito;
 
 import br.pelommedrado.cegonha.cliente.FtpCliente;
-import br.pelommedrado.cegonha.download.DownloadManager;
-import br.pelommedrado.cegonha.download.FileFtpChecksum;
-import br.pelommedrado.cegonha.download.FileFtpRecupera;
 
 /**
  * @author Andre Leite
@@ -23,7 +22,7 @@ public class FtpFileRecuperaTest {
 
 	/** criar cliente FTP **/
 	private FtpCliente tFtpCliente;
-	
+
 	/** Arquivo local **/
 	private String fileLocal;
 
@@ -92,5 +91,60 @@ public class FtpFileRecuperaTest {
 
 		assertEquals(false, fCheck.isPacoteCorrompido());
 		assertEquals(false, fCheck.verificarFileCorrompido(tFtpCliente.getFtp()));
+	}
+
+	/**
+	 * 
+	 * @throws IOException
+	 */
+	@Test(expected=IOException.class)
+	public void testRecuperacaoFileNaoConectado() throws IOException {
+		fCheck = new FileFtpChecksum(fileLocal, fileRemoto);
+		//nao ocorreu erro no download?
+		assertEquals(false, fCheck.verificarFileCorrompido(tFtpCliente.getFtp()));
+
+		//corromper o arquivo
+		DownloadManagerTest.corromperArquivo(fileLocal, new int[]{0, 5, 10}, DownloadManager.MAX_BUFFER_SIZE);
+
+		fCheck.scaniarPacoteCorrompido(tFtpCliente.getFtp());
+		//arquivo foi corrompido?
+		assertEquals(true, fCheck.isPacoteCorrompido());
+
+		//===================================================
+
+		//crair mock FTP
+		final FTPClient ftpMock = Mockito.mock(FTPClient.class); 
+		Mockito.when(ftpMock.isConnected()).thenReturn(false);
+
+		FileFtpRecupera fRecuperar = new FileFtpRecupera(ftpMock, fCheck.getDownloadFile());
+		fRecuperar.recuperar();
+	}
+	
+	/**
+	 * 
+	 * @throws IOException
+	 */
+	@Test(expected=IOException.class)
+	public void testRecuperacaoFileRespostaServidorNegativa() throws IOException {
+		fCheck = new FileFtpChecksum(fileLocal, fileRemoto);
+		//nao ocorreu erro no download?
+		assertEquals(false, fCheck.verificarFileCorrompido(tFtpCliente.getFtp()));
+
+		//corromper o arquivo
+		DownloadManagerTest.corromperArquivo(fileLocal, new int[]{0, 5, 10}, DownloadManager.MAX_BUFFER_SIZE);
+
+		fCheck.scaniarPacoteCorrompido(tFtpCliente.getFtp());
+		//arquivo foi corrompido?
+		assertEquals(true, fCheck.isPacoteCorrompido());
+
+		//===================================================
+
+		//crair mock FTP
+		final FTPClient ftpMock = Mockito.mock(FTPClient.class); 
+		Mockito.when(ftpMock.isConnected()).thenReturn(true);
+		Mockito.when(ftpMock.getReplyCode()).thenReturn(500);
+		
+		FileFtpRecupera fRecuperar = new FileFtpRecupera(ftpMock, fCheck.getDownloadFile());
+		fRecuperar.recuperar();
 	}
 }

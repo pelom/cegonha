@@ -36,7 +36,7 @@ public class DownloadManager {
 	private Properties props = new Properties();
 
 	/** Arquivo de controle **/
-	private File fileData = null;
+	private File fileCtl = null;
 
 	/**  Numero do bytes baixados **/
 	private long downloaded; 
@@ -52,6 +52,9 @@ public class DownloadManager {
 
 	/** Tentar recuperar o arquivo caso esteja corrompido **/
 	private boolean recuperar = true;
+
+	/** Verificar de integridade do arquivo **/
+	private FileFtpChecksum fileFtpChecksum = null;
 
 	/**
 	 * Construtor da classe.
@@ -76,6 +79,7 @@ public class DownloadManager {
 		this.fileRemoto = fileRemoto;
 		this.downloaded = 0;
 		this.recuperar = recuperar;
+		this.fileFtpChecksum = new FileFtpChecksum(fileLocal, fileRemoto);
 	}
 
 	/**
@@ -85,50 +89,73 @@ public class DownloadManager {
 	public boolean download() throws IOException {
 		logger.debug("iniciando configuracoes dos dados baixados");
 
-		//arquivo de controle do download
-		fileData = new File(fileLocal + EXT_PROPERTIES);
-
-		//o arquivo existe?
-		if(fileData.exists()) {
-			logger.debug("continuar download");
-
-			final FileInputStream fi = new FileInputStream(fileData);
-			props.load(fi);
-
-			//indice corrente
-			downloaded = Integer.valueOf(props.getProperty("download"));
-
-			fi.close();
-
-		} else {
-			logger.debug("iniciar download");
-
-			//criar arquivo de controle
-			fileData.createNewFile();
-
-			//salvar dados
-			salvar();
-		}
+		//preparar para iniciar o download
+		preparar();
 
 		//arquivo copiado?
-		if(copiarFile()) {
-			fileData.delete();
+		boolean ok = copiarFile();
 
-			//criar verificador de arquivo
-			final FileFtpChecksum fCheck = new FileFtpChecksum(fileLocal, fileRemoto);
-
-			//o arquivo esta corrompido?
-			if(fCheck.verificarFileCorrompido(ftp)) {
-				//recuperar arquivo
-				return recuperarFile(fCheck);
-
-			} else {
-				return true;
-
-			}
+		//o arquivo esta corrompido?
+		if(ok && fileFtpChecksum.verificarFileCorrompido(ftp)) {
+			//recuperar arquivo
+			ok = recuperarFile();
 		}
 
-		return false;
+		//remover continuacao
+		fileCtl.delete();
+
+		return ok;
+	}
+
+	/**
+	 * 
+	 * @throws IOException
+	 */
+	private void preparar() throws IOException {
+		logger.debug("analizar as configuracoes dos dados baixados");
+
+		//arquivo de controle do download
+		fileCtl = new File(fileLocal + EXT_PROPERTIES);
+
+		//existe um download nao concluido?
+		if(fileCtl.exists()) {
+			carregarConfig();
+
+		} else {
+			logger.debug("preparando para iniciar o download");
+			//criar arquivo de controle
+			fileCtl.createNewFile();
+			
+			salvarConfig();
+		}
+	}
+
+	/**
+	 * 
+	 * @throws IOException
+	 */
+	private void carregarConfig() throws IOException {
+		logger.debug("carregando download nao concluido");
+
+		final FileInputStream fi = new FileInputStream(fileCtl);
+		props.load(fi);
+		fi.close();
+
+		//indice corrente
+		downloaded = Integer.valueOf(props.getProperty("download"));
+	}
+
+	/**
+	 * 
+	 * @throws IOException
+	 */
+	private void salvarConfig() throws IOException {
+		props.setProperty("download", String.valueOf(downloaded));
+
+		final FileOutputStream fo = new FileOutputStream(fileCtl);
+		props.store(fo, "parametros de controle do download");
+		fo.flush();
+		fo.close();
 	}
 
 	/**
@@ -181,31 +208,21 @@ public class DownloadManager {
 
 				downloaded += bytes;
 
-				salvar();
+				salvarConfig();
 			}
-
 		} catch (IOException e) {
-			//remover arquivo
-			file.delete();
-
 			throw new CopyStreamException(
 					"IOException caught while copying.", downloaded, e);
-
 		} finally {
 			// Close file.
 			if (out != null) {
-				try {
-					out.close();
-				} catch (Exception e) {}
+				out.close();
 			}
 
 			if (in != null) {
-				try {
-					in.close();
-				} catch (Exception e) {}
+				in.close();
 			}
 		}
-
 
 		boolean ok = ftp.completePendingCommand();
 		//download concluiu
@@ -215,23 +232,9 @@ public class DownloadManager {
 
 		} else {
 			file.delete();
-
 		}
 
 		return ok;
-	}
-
-	/**
-	 * 
-	 * @throws IOException
-	 */
-	private void salvar() throws IOException {
-		props.setProperty("download", String.valueOf(downloaded));
-
-		final FileOutputStream fo = new FileOutputStream(fileData);
-		props.store(fo, "parametros de controle do download");
-		fo.flush();
-		fo.close();
 	}
 
 	/**
@@ -241,7 +244,7 @@ public class DownloadManager {
 	 * @return
 	 * @throws IOException
 	 */
-	private boolean recuperarFile(final FileFtpChecksum fCheck) throws IOException {
+	private boolean recuperarFile() throws IOException {
 		if(!recuperar) {
 			return false;
 		}
@@ -249,15 +252,15 @@ public class DownloadManager {
 		logger.debug("preparar para recuperar o arquivo corrompido");
 
 		//scaniar os pacotes corrompidos
-		fCheck.scaniarPacoteCorrompido(ftp);
+		fileFtpChecksum.scaniarPacoteCorrompido(ftp);
 
 		//foi possivel identificar pacotes corrompidos?
-		if(fCheck.isPacoteCorrompido()) {
+		if(fileFtpChecksum.isPacoteCorrompido()) {
 			//obter numero de pacotes corrompidos
-			int nPkg = fCheck.getDownloadFile().getPacotes().size();
+			int nPkg = fileFtpChecksum.getDownloadFile().getPacotes().size();
 
 			final FileFtpRecupera fRecuperar = 
-					new FileFtpRecupera(ftp, fCheck.getDownloadFile());
+					new FileFtpRecupera(ftp, fileFtpChecksum.getDownloadFile());
 
 			//numero de pacotes recuperados e igual?
 			if(fRecuperar.recuperar() != nPkg) {
@@ -269,5 +272,12 @@ public class DownloadManager {
 		} else {
 			throw new IOException("nao foi possivel recuperar o arquivo");
 		}
+	}
+
+	/**
+	 * @param fileFtpChecksum the fileFtpChecksum to set
+	 */
+	public void setFileFtpChecksum(FileFtpChecksum fileFtpChecksum) {
+		this.fileFtpChecksum = fileFtpChecksum;
 	}
 }

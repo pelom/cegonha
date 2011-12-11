@@ -4,20 +4,21 @@
 package br.pelommedrado.cegonha.download;
 
 import static org.junit.Assert.assertEquals;
+import static org.mockito.Matchers.anyString;
 
+import java.io.File;
 import java.io.IOException;
 
+import org.apache.commons.net.ftp.FTPClient;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.mockito.Mockito;
 
 import br.pelommedrado.cegonha.cliente.FtpCliente;
-import br.pelommedrado.cegonha.download.DownloadManager;
-import br.pelommedrado.cegonha.download.FileFtpChecksum;
 
 /**
- * @author pelom
- *
+ * @author Andre Leite
  */
 public class FtpFileChecksumTest {
 
@@ -55,6 +56,15 @@ public class FtpFileChecksumTest {
 	}
 
 	/**
+	 * 
+	 */
+	@After
+	public void verificarFile() {
+		assertEquals(true, new File(fileLocal).exists());
+		assertEquals(false, new File(fileLocal + DownloadManager.EXT_PROPERTIES).exists());
+	}
+	
+	/**
 	 * @throws java.lang.Exception
 	 */
 	@After
@@ -67,7 +77,7 @@ public class FtpFileChecksumTest {
 	 * @throws IOException
 	 */
 	@Test
-	public void testFileCorrompido() throws IOException {
+	public void testVerificarFileNaoEstaCorrompido() throws IOException {
 		fCheck = new FileFtpChecksum(fileLocal, fileRemoto);
 		assertEquals(false, fCheck.verificarFileCorrompido(tFtpCliente.getFtp()));
 	}
@@ -77,12 +87,13 @@ public class FtpFileChecksumTest {
 	 * @throws IOException
 	 */
 	@Test
-	public void testCorrompimentoTresPacote() throws IOException {
-		DownloadManagerTest.corromperArquivo(fileLocal, new int[]{0, 5, 10}, DownloadManager.MAX_BUFFER_SIZE);
-		fCheck = new FileFtpChecksum(fileLocal, fileRemoto);
-		fCheck.scaniarPacoteCorrompido(tFtpCliente.getFtp());
+	public void testVerificarFileCorrompimento() throws IOException {
+		//corromper 3 pacotes
+		DownloadManagerTest.corromperArquivo(fileLocal, new int[]{0, 5, 10}, 
+				DownloadManager.MAX_BUFFER_SIZE);
 
-		assertEquals(3, fCheck.getDownloadFile().getPacotes().size());
+		fCheck = new FileFtpChecksum(fileLocal, fileRemoto);
+		assertEquals(true, fCheck.verificarFileCorrompido(tFtpCliente.getFtp()));
 	}
 
 	/**
@@ -90,7 +101,7 @@ public class FtpFileChecksumTest {
 	 * @throws IOException
 	 */
 	@Test
-	public void testPacoteCorrompido() throws IOException {
+	public void testVerificarPacoteCorrompido() throws IOException {
 		DownloadManagerTest.corromperArquivo(fileLocal, new int[]{0}, DownloadManager.MAX_BUFFER_SIZE);
 		fCheck = new FileFtpChecksum(fileLocal, fileRemoto);
 		fCheck.scaniarPacoteCorrompido(tFtpCliente.getFtp());
@@ -103,10 +114,92 @@ public class FtpFileChecksumTest {
 	 * @throws IOException
 	 */
 	@Test
-	public void testPacoteNaoCorrompido() throws IOException {
+	public void testVerificarPacoteNaoCorrompido() throws IOException {
 		fCheck = new FileFtpChecksum(fileLocal, fileRemoto);
 		fCheck.scaniarPacoteCorrompido(tFtpCliente.getFtp());
 
 		assertEquals(false, fCheck.isPacoteCorrompido());
+	}
+
+	/**
+	 * 
+	 * @throws IOException
+	 */
+	@Test
+	public void testVerificarTresPacotesEstaCorrompimento() throws IOException {
+		//corromper 3 pacotes
+		DownloadManagerTest.corromperArquivo(fileLocal, new int[]{0, 5, 10}, 
+				DownloadManager.MAX_BUFFER_SIZE);
+
+		fCheck = new FileFtpChecksum(fileLocal, fileRemoto);
+		fCheck.scaniarPacoteCorrompido(tFtpCliente.getFtp());
+
+		assertEquals(3, fCheck.getDownloadFile().getPacotes().size());
+	}
+
+	/**
+	 * 
+	 * @throws IOException
+	 */
+	@Test(expected=IOException.class)
+	public void testVerificarPacoteCorrompidoNaoConectado() throws IOException {
+		//crair mock FTP
+		final FTPClient ftpMock = Mockito.mock(FTPClient.class); 
+		Mockito.when(ftpMock.isConnected()).thenReturn(false);
+		
+		fCheck = new FileFtpChecksum(fileLocal, fileRemoto);
+		fCheck.scaniarPacoteCorrompido(ftpMock);
+	}
+
+	/**
+	 * 
+	 * @throws IOException
+	 */
+	@Test(expected=IOException.class)
+	public void testVerificarPacoteRespostaServidorNegativa() throws IOException {
+
+		//crair mock FTP
+		final FTPClient ftpMock = Mockito.mock(FTPClient.class); 
+		Mockito.when(ftpMock.isConnected()).thenReturn(true);
+		Mockito.when(ftpMock.doCommand(anyString(), anyString())).thenReturn(true);
+		Mockito.when(ftpMock.getReplyCode()).thenReturn(500);
+
+		fCheck = new FileFtpChecksum(fileLocal, fileRemoto);
+		fCheck.scaniarPacoteCorrompido(ftpMock);
+
+	}
+	
+	/**
+	 * 
+	 * @throws IOException
+	 */
+	@Test(expected=IOException.class)
+	public void testVerificarFileSemRespostaServidor() throws IOException {
+
+		//crair mock FTP
+		final FTPClient ftpMock = Mockito.mock(FTPClient.class); 
+		Mockito.when(ftpMock.isConnected()).thenReturn(true);
+		Mockito.when(ftpMock.doCommand(anyString(), anyString())).thenReturn(true);
+		Mockito.when(ftpMock.getReplyCode()).thenReturn(500);
+
+		fCheck = new FileFtpChecksum(fileLocal, fileRemoto);
+		fCheck.verificarFileCorrompido(ftpMock);
+
+	}
+
+	/**
+	 * 
+	 * @throws IOException
+	 */
+	@Test(expected=IOException.class)
+	public void testVerificarFileNaoconectado() throws IOException {
+
+		//crair mock FTP
+		final FTPClient ftpMock = Mockito.mock(FTPClient.class); 
+		Mockito.when(ftpMock.isConnected()).thenReturn(false);
+
+		fCheck = new FileFtpChecksum(fileLocal, fileRemoto);
+		fCheck.verificarFileCorrompido(ftpMock);
+
 	}
 }

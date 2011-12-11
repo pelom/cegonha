@@ -37,6 +37,9 @@ public class FtpCliente {
 	 */
 	public FtpCliente() {
 		super();
+
+		//criar cliente ftp
+		ftp = new FTPClient();  
 	}
 
 	/**
@@ -45,14 +48,14 @@ public class FtpCliente {
 	 * @throws SocketException
 	 * @throws IOException
 	 */
-	public boolean conectar() 
-			throws SocketException, IOException {
-
+	public boolean conectar() throws SocketException, IOException {
 		logger.info("iniciando conexao com o servidor:" + servidor + " porta:" + porta);
 
-		//criar cliente ftp
-		ftp = new FTPClient();  
-
+		//a conexao esta ativa? 
+		if(ftp.isConnected()) {
+			throw new IOException("a conexao esta ativa");
+		}
+		
 		//estabelecar conexao
 		ftp.connect(servidor, porta);  
 
@@ -97,11 +100,9 @@ public class FtpCliente {
 	 * @return
 	 * @throws IOException
 	 */
-	public boolean download(String fileRemoto, String fileLocal, boolean recuperar) 
-			throws IOException {
-
+	public boolean download(String fileRemoto, String fileLocal, boolean recuperar) throws IOException {
 		//a conexao nao esta ativa? 
-		if(!FTPReply.isPositiveCompletion(ftp.getReplyCode())) {
+		if(!ftp.isConnected()) {
 			throw new IOException("a conexao nao esta ativa");  
 		}
 

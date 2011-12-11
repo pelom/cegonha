@@ -19,7 +19,7 @@ public class FileFtpRecupera {
 
 	/** Arquivo a ser recuperado **/
 	private FileDownload fileDownload = null;
-	
+
 	/** Cliente FTP **/
 	private FTPClient ftp;
 
@@ -89,9 +89,7 @@ public class FileFtpRecupera {
 		} finally {
 			// Close file.
 			if (fileOut != null) {
-				try {
-					fileOut.close();
-				} catch (Exception e) {}
+				fileOut.close();
 			}
 		}
 

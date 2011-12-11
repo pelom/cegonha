@@ -4,90 +4,214 @@
 package br.pelommedrado.cegonha.download;
 
 import static org.junit.Assert.assertEquals;
+import static org.mockito.Matchers.anyString;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.util.Properties;
 
-import org.junit.After;
+import org.apache.commons.net.ftp.FTPClient;
+import org.apache.commons.net.io.CopyStreamException;
+import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.Test;
+import org.mockito.Mockito;
+import org.mockito.invocation.InvocationOnMock;
+import org.mockito.stubbing.Answer;
 
 import br.pelommedrado.cegonha.cliente.FtpCliente;
-import br.pelommedrado.cegonha.download.DownloadManager;
+import br.pelommedrado.cegonha.util.FileUtils;
 
 /**
  * @author Andre Leite
  */
 public class DownloadManagerTest {
 
-	/** criar cliente FTP **/
-	private FtpCliente tFtpCliente;
-
 	/** Arquivo local **/
-	private String fileLocal;
+	private static String fileLocal;
 
 	/** Arquivo remoto **/
-	private String fileRemoto;
+	private static String fileRemoto;
+
+	/** Arquivo local para mock **/
+	private static String stgFile = "src/test/resources/Capture_20111205.wmv";
 
 	/**
 	 * @throws java.lang.Exception
 	 */
 	@Before
 	public void setUp() throws Exception {
-		//conectar ao servidor
-		tFtpCliente = new FtpCliente();
-		tFtpCliente.setServidor("localhost");
-		tFtpCliente.setPorta(2121);
-		tFtpCliente.setUsuario("admin");
-		tFtpCliente.setSenha("admin");
-
-		tFtpCliente.conectar();
-
 		fileLocal = "/home/pelom/Capture_20111205.wmv";
 		fileRemoto = "Capture_20111205.wmv";
 	}
 
-	/**
-	 * @throws java.lang.Exception
-	 */
-	@After
-	public void tearDown() throws Exception {
-		tFtpCliente.desconectar();
+	@AfterClass
+	public static void verificarFile() {
+		assertEquals(true, new File(fileLocal).exists());
+		assertEquals(false, new File(fileLocal + DownloadManager.EXT_PROPERTIES).exists());
 	}
-
+	
 	/**
-	 * 
-	 * @throws IOException
-	 */
-	@Test
-	public void testDownloadContinuacao() throws IOException {
-		//arquivo de controle do download
-		File fileData = new File(fileLocal + DownloadManager.EXT_PROPERTIES);
-		fileData.createNewFile();
-
-		Properties props = new Properties();
-		props.setProperty("download", String.valueOf(0));
-
-		final FileOutputStream fo = new FileOutputStream(fileData);
-		props.store(fo, "parametros de controle do download");
-		fo.flush();
-		fo.close();
-
-		DownloadManager download = new DownloadManager(tFtpCliente.getFtp(), fileLocal, fileRemoto, true);
-		assertEquals(true, download.download());
-	}
-
-	/**
-	 * 
+	 *  Testar o download iniciando do inicio do arquivo
 	 * @throws IOException
 	 */
 	@Test
 	public void testDownload() throws IOException {
+		//conectar ao servidor
+		FtpCliente tFtpCliente = new FtpCliente();
+		tFtpCliente.setServidor("localhost");
+		tFtpCliente.setPorta(2121);
+		tFtpCliente.setUsuario("admin");
+		tFtpCliente.setSenha("admin");
+		tFtpCliente.conectar();
+
 		DownloadManager download = new DownloadManager(tFtpCliente.getFtp(), fileLocal, fileRemoto, true);
 		assertEquals(true, download.download());
+	}
+
+	/**
+	 * Testar o download iniciando a parti de um pedaco do arquivo
+	 * @throws IOException
+	 */
+	@Test
+	public void testDownloadContinuacao() throws IOException {
+		//copiar um pedaco do arquivo
+		FileInputStream source = new FileInputStream(stgFile);
+		FileOutputStream dest = new FileOutputStream(fileLocal + DownloadManager.EXT_FILE);
+		long size = FileUtils.copyStream(source, dest, 
+				DownloadManager.MAX_BUFFER_SIZE, DownloadManager.MAX_BUFFER_SIZE * 10);
+
+		Properties props = new Properties();
+		props.setProperty("download", size+"");
+		final FileOutputStream fo = new FileOutputStream(fileLocal + DownloadManager.EXT_PROPERTIES);
+		props.store(fo, "parametros de controle do download");
+		fo.flush();
+		fo.close();
+
+		//conectar ao servidor
+		FtpCliente tFtpCliente = new FtpCliente();
+		tFtpCliente.setServidor("localhost");
+		tFtpCliente.setPorta(2121);
+		tFtpCliente.setUsuario("admin");
+		tFtpCliente.setSenha("admin");
+		tFtpCliente.conectar();
+
+		DownloadManager download = new DownloadManager(tFtpCliente.getFtp(), fileLocal, fileRemoto, true);
+		assertEquals(true, download.download());
+	}
+
+	/**
+	 * Testar o download executando o processo de recuperacao do arquivo corrompido
+	 * @throws IOException
+	 */
+	@Test
+	public void testDownloadRecuperacaoArquivoCorrompido() throws IOException {
+		//criar entrada de dados moquiada
+		final FileInputStream in = new FileInputStream(stgFile);
+
+		//crair mock FTP
+		final FTPClient ftpMock = Mockito.mock(FTPClient.class); 
+		Mockito.when(ftpMock.retrieveFileStream(anyString())).thenReturn(in);
+		Mockito.when(ftpMock.completePendingCommand()).thenReturn(true);
+		Mockito.when(ftpMock.isConnected()).thenReturn(true);
+
+		//criar download manager com o mock do FTP
+		DownloadManager download = new DownloadManager(ftpMock, fileLocal, fileRemoto, true);
+
+		//crair mock do Chechsum File
+		final FileFtpChecksum fileFtpChecksumMock = Mockito.mock(FileFtpChecksum.class);
+		Mockito.when(fileFtpChecksumMock.getDownloadFile()).thenReturn(new FileDownload(fileLocal, fileRemoto));
+		Mockito.when(fileFtpChecksumMock.verificarFileCorrompido(ftpMock)).thenReturn(true);
+		Mockito.doAnswer(new Answer<Object>() {
+			public Object answer(InvocationOnMock invocation) {
+				Object[] args = invocation.getArguments();
+				return "called with arguments: " + args;
+			}
+		}).when(fileFtpChecksumMock).scaniarPacoteCorrompido(ftpMock);
+		Mockito.when(fileFtpChecksumMock.isPacoteCorrompido()).thenReturn(true);
+
+		//setar Chechsum File moquiado
+		download.setFileFtpChecksum(fileFtpChecksumMock);
+
+		assertEquals(true, download.download());
+	}
+
+	/**
+	 * Testar o download executando o processo de recuperacao do arquivo 
+	 * corrompido nao sendo possivel encontrar a parte corrompida
+	 * 
+	 * @throws IOException
+	 */
+	@Test(expected=IOException.class)
+	public void testDownloadRecuperacaoArquivoCorrompidoNaoCompleta() throws IOException {
+		//criar entrada de dados moquiada
+		final FileInputStream in = new FileInputStream(stgFile);
+
+		//crair mock FTP
+		final FTPClient ftpMock = Mockito.mock(FTPClient.class); 
+		Mockito.when(ftpMock.retrieveFileStream(anyString())).thenReturn(in);
+		Mockito.when(ftpMock.completePendingCommand()).thenReturn(true);
+		Mockito.when(ftpMock.isConnected()).thenReturn(true);
+
+		//criar download manager com o mock do FTP
+		DownloadManager download = new DownloadManager(ftpMock, fileLocal, fileRemoto, true);
+
+		//crair mock do Chechsum File
+		final FileFtpChecksum fileFtpChecksumMock = Mockito.mock(FileFtpChecksum.class);
+		Mockito.when(fileFtpChecksumMock.getDownloadFile()).thenReturn(new FileDownload(fileLocal, fileRemoto));
+		Mockito.when(fileFtpChecksumMock.verificarFileCorrompido(ftpMock)).thenReturn(true);
+		Mockito.doAnswer(new Answer<Object>() {
+			public Object answer(InvocationOnMock invocation) {
+				Object[] args = invocation.getArguments();
+				return "called with arguments: " + args;
+			}
+		}).when(fileFtpChecksumMock).scaniarPacoteCorrompido(ftpMock);
+		Mockito.when(fileFtpChecksumMock.isPacoteCorrompido()).thenReturn(false);
+
+		//setar Chechsum File moquiado
+		download.setFileFtpChecksum(fileFtpChecksumMock);
+		download.download();
+	}
+
+	/**
+	 *  Testar o download com erro na leitura do arquivo no servidor
+	 * @throws IOException
+	 */
+	@Test(expected=CopyStreamException.class)
+	public void testDownloadErroLeitura() throws IOException {
+		final FileInputStream inMock  = Mockito.mock(FileInputStream.class);
+		Mockito.doThrow(new IOException()).when(inMock).read(new byte[DownloadManager.MAX_BUFFER_SIZE]);
+
+		//crair mock FTP
+		final FTPClient ftpMock = Mockito.mock(FTPClient.class); 
+		Mockito.when(ftpMock.retrieveFileStream(anyString())).thenReturn(inMock);
+
+		//criar download manager com o mock do FTP
+		DownloadManager download = new DownloadManager(ftpMock, fileLocal, fileRemoto, true);
+		download.download();
+	}
+
+	/**
+	 *  Testar o download com o comando de recusao do servidor
+	 *  o download e concluido poram o servidor informa que o download esta com erro
+	 * @throws IOException
+	 */
+	@Test()
+	public void testDownloadRecusandoServidor() throws IOException {
+		//criar entrada de dados moquiada
+		final FileInputStream in = new FileInputStream(stgFile);
+
+		//crair mock FTP
+		final FTPClient ftpMock = Mockito.mock(FTPClient.class); 
+		Mockito.when(ftpMock.retrieveFileStream(anyString())).thenReturn(in);
+		Mockito.when(ftpMock.completePendingCommand()).thenReturn(false);
+
+		//criar download manager com o mock do FTP
+		DownloadManager download = new DownloadManager(ftpMock, fileLocal, fileRemoto, true);
+		download.download();
 	}
 
 	/**

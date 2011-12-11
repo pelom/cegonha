@@ -53,9 +53,9 @@ public class FileFtpChecksum {
 		if(FTPReply.isPositiveCompletion(ftp.getReplyCode())) {
 
 			//obter o valor retornado
-			final String checksum = ftp.getReplyString().split(" ")[1].trim();
+			final long checksum = ParseChecksumCommand.parseChecksum(ftp.getReplyString());
 
-			return FileUtils.isCorrompido(downloadFile.getFileLocal(), Long.valueOf(checksum));
+			return FileUtils.isCorrompido(downloadFile.getFileLocal(), checksum);
 
 		} else {
 			throw new IOException("nao foi possivel realizar o checksum do arquivo");

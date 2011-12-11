@@ -39,12 +39,4 @@ package br.pelommedrado.cegonha.download;
 		public int getLen() {
 			return len;
 		}
-
-		/* (non-Javadoc)
-		 * @see java.lang.Object#toString()
-		 */
-		@Override
-		public String toString() {
-			return "PacoteMal [off=" + off + ", len=" + len + "]";
-		}
 	}
