@@ -1,7 +1,7 @@
 /**
  * 
  */
-package br.pelommedrado.cegonha.download;
+package br.pelommedrado.cegonha.download.impl;
 
 import java.io.IOException;
 import java.io.RandomAccessFile;
@@ -10,12 +10,15 @@ import org.apache.commons.net.ftp.FTPClient;
 import org.apache.commons.net.ftp.FTPReply;
 import org.apache.commons.net.util.Base64;
 
+import br.pelommedrado.cegonha.download.IFileRecuperar;
+import br.pelommedrado.cegonha.download.util.FileDownload;
+import br.pelommedrado.cegonha.download.util.FilePacote;
 import br.pelommedrado.cegonha.parse.ParseGetpkgCommand;
 
 /**
  * @author Andre Leite
  */
-public class FileFtpRecupera {
+public class FileRecuperaFtp implements IFileRecuperar {
 
 	/** Arquivo a ser recuperado **/
 	private FileDownload fileDownload = null;
@@ -26,10 +29,10 @@ public class FileFtpRecupera {
 	/**
 	 * Construtor da classe.
 	 */
-	public FileFtpRecupera() {
+	public FileRecuperaFtp() {
 		this(null, null);
 	}
-	
+
 	/**
 	 * Construtor da classe.
 	 * 
@@ -39,7 +42,7 @@ public class FileFtpRecupera {
 	 * @param fileDownload
 	 * 		Arquivo para ser recuperado
 	 */
-	public FileFtpRecupera(FTPClient ftp, FileDownload fileDownload) {
+	public FileRecuperaFtp(FTPClient ftp, FileDownload fileDownload) {
 		super();
 
 		this.ftp = ftp;
@@ -65,7 +68,7 @@ public class FileFtpRecupera {
 
 		try {
 			//varrer os pacotes corrompidos
-			for (FileFtpPacote pc : fileDownload.getPacotes()) {
+			for (FilePacote pc : fileDownload.getPacotes()) {
 
 				//configurar posicao de escrita
 				fileOut.seek(pc.getOff());

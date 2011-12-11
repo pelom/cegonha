@@ -1,10 +1,11 @@
 /**
  * 
  */
-package br.pelommedrado.cegonha.download;
+package br.pelommedrado.cegonha.download.util;
 
 import java.util.ArrayList;
 import java.util.List;
+
 
 /**
  * @author Andre Leite
@@ -18,7 +19,7 @@ public class FileDownload {
 	private String fileRemoto = null;
 
 	/** Pacotes corrompidos **/
-	private List<FileFtpPacote> pacotes;
+	private List<FilePacote> pacotes;
 
 	/**
 	 * 
@@ -30,14 +31,14 @@ public class FileDownload {
 
 		this.fileLocal = fileLocal;
 		this.fileRemoto = fileRemoto;
-		this.pacotes = new ArrayList<FileFtpPacote>();
+		this.pacotes = new ArrayList<FilePacote>();
 	}
 	
 	/**
 	 * 
 	 * @param pacote
 	 */
-	public void add(FileFtpPacote pacote) {
+	public void add(FilePacote pacote) {
 		this.pacotes.add(pacote);
 	}
 
@@ -58,7 +59,7 @@ public class FileDownload {
 	/**
 	 * @return the pacotes
 	 */
-	public List<FileFtpPacote> getPacotes() {
+	public List<FilePacote> getPacotes() {
 		return pacotes;
 	}
 }

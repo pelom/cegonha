@@ -54,6 +54,7 @@
 				<configuration>
 					<instrumentation>
 						<excludes>
+							<exclude>br/pelommedrado/cegonha/download/*.class</exclude>
 						</excludes>
 					</instrumentation>
 					<check>

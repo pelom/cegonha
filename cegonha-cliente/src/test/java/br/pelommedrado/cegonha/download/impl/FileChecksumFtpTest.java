@@ -1,7 +1,7 @@
 /**
  * 
  */
-package br.pelommedrado.cegonha.download;
+package br.pelommedrado.cegonha.download.impl;
 
 import static org.junit.Assert.assertEquals;
 import static org.mockito.Matchers.anyString;
@@ -16,11 +16,13 @@ import org.junit.Test;
 import org.mockito.Mockito;
 
 import br.pelommedrado.cegonha.cliente.FtpCliente;
+import br.pelommedrado.cegonha.download.impl.DownloadManager;
+import br.pelommedrado.cegonha.download.impl.FileChecksumFtp;
 
 /**
  * @author Andre Leite
  */
-public class FtpFileChecksumTest {
+public class FileChecksumFtpTest {
 
 	/** criar cliente FTP **/
 	private FtpCliente tFtpCliente;
@@ -32,7 +34,7 @@ public class FtpFileChecksumTest {
 	private String fileRemoto;
 
 	/** Verificador de arquivo **/
-	private FileFtpChecksum fCheck;
+	private FileChecksumFtp fCheck;
 
 	/**
 	 * @throws java.lang.Exception
@@ -78,7 +80,7 @@ public class FtpFileChecksumTest {
 	 */
 	@Test
 	public void testVerificarFileNaoEstaCorrompido() throws IOException {
-		fCheck = new FileFtpChecksum(fileLocal, fileRemoto);
+		fCheck = new FileChecksumFtp(fileLocal, fileRemoto);
 		assertEquals(false, fCheck.verificarFileCorrompido(tFtpCliente.getFtp()));
 	}
 
@@ -92,7 +94,7 @@ public class FtpFileChecksumTest {
 		DownloadManagerTest.corromperArquivo(fileLocal, new int[]{0, 5, 10}, 
 				DownloadManager.MAX_BUFFER_SIZE);
 
-		fCheck = new FileFtpChecksum(fileLocal, fileRemoto);
+		fCheck = new FileChecksumFtp(fileLocal, fileRemoto);
 		assertEquals(true, fCheck.verificarFileCorrompido(tFtpCliente.getFtp()));
 	}
 
@@ -103,8 +105,8 @@ public class FtpFileChecksumTest {
 	@Test
 	public void testVerificarPacoteCorrompido() throws IOException {
 		DownloadManagerTest.corromperArquivo(fileLocal, new int[]{0}, DownloadManager.MAX_BUFFER_SIZE);
-		fCheck = new FileFtpChecksum(fileLocal, fileRemoto);
-		fCheck.scaniarPacoteCorrompido(tFtpCliente.getFtp());
+		fCheck = new FileChecksumFtp(fileLocal, fileRemoto);
+		fCheck.verificarPacoteCorrompido(tFtpCliente.getFtp());
 
 		assertEquals(true, fCheck.isPacoteCorrompido());
 	}
@@ -115,8 +117,8 @@ public class FtpFileChecksumTest {
 	 */
 	@Test
 	public void testVerificarPacoteNaoCorrompido() throws IOException {
-		fCheck = new FileFtpChecksum(fileLocal, fileRemoto);
-		fCheck.scaniarPacoteCorrompido(tFtpCliente.getFtp());
+		fCheck = new FileChecksumFtp(fileLocal, fileRemoto);
+		fCheck.verificarPacoteCorrompido(tFtpCliente.getFtp());
 
 		assertEquals(false, fCheck.isPacoteCorrompido());
 	}
@@ -131,8 +133,8 @@ public class FtpFileChecksumTest {
 		DownloadManagerTest.corromperArquivo(fileLocal, new int[]{0, 5, 10}, 
 				DownloadManager.MAX_BUFFER_SIZE);
 
-		fCheck = new FileFtpChecksum(fileLocal, fileRemoto);
-		fCheck.scaniarPacoteCorrompido(tFtpCliente.getFtp());
+		fCheck = new FileChecksumFtp(fileLocal, fileRemoto);
+		fCheck.verificarPacoteCorrompido(tFtpCliente.getFtp());
 
 		assertEquals(3, fCheck.getDownloadFile().getPacotes().size());
 	}
@@ -147,8 +149,8 @@ public class FtpFileChecksumTest {
 		final FTPClient ftpMock = Mockito.mock(FTPClient.class); 
 		Mockito.when(ftpMock.isConnected()).thenReturn(false);
 		
-		fCheck = new FileFtpChecksum(fileLocal, fileRemoto);
-		fCheck.scaniarPacoteCorrompido(ftpMock);
+		fCheck = new FileChecksumFtp(fileLocal, fileRemoto);
+		fCheck.verificarPacoteCorrompido(ftpMock);
 	}
 
 	/**
@@ -164,8 +166,8 @@ public class FtpFileChecksumTest {
 		Mockito.when(ftpMock.doCommand(anyString(), anyString())).thenReturn(true);
 		Mockito.when(ftpMock.getReplyCode()).thenReturn(500);
 
-		fCheck = new FileFtpChecksum(fileLocal, fileRemoto);
-		fCheck.scaniarPacoteCorrompido(ftpMock);
+		fCheck = new FileChecksumFtp(fileLocal, fileRemoto);
+		fCheck.verificarPacoteCorrompido(ftpMock);
 
 	}
 	
@@ -182,7 +184,7 @@ public class FtpFileChecksumTest {
 		Mockito.when(ftpMock.doCommand(anyString(), anyString())).thenReturn(true);
 		Mockito.when(ftpMock.getReplyCode()).thenReturn(500);
 
-		fCheck = new FileFtpChecksum(fileLocal, fileRemoto);
+		fCheck = new FileChecksumFtp(fileLocal, fileRemoto);
 		fCheck.verificarFileCorrompido(ftpMock);
 
 	}
@@ -198,7 +200,7 @@ public class FtpFileChecksumTest {
 		final FTPClient ftpMock = Mockito.mock(FTPClient.class); 
 		Mockito.when(ftpMock.isConnected()).thenReturn(false);
 
-		fCheck = new FileFtpChecksum(fileLocal, fileRemoto);
+		fCheck = new FileChecksumFtp(fileLocal, fileRemoto);
 		fCheck.verificarFileCorrompido(ftpMock);
 
 	}

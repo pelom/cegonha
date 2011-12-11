@@ -1,7 +1,7 @@
 /**
  * 
  */
-package br.pelommedrado.cegonha.download;
+package br.pelommedrado.cegonha.download.impl;
 
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -11,24 +11,29 @@ import org.apache.commons.net.ftp.FTPReply;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import br.pelommedrado.cegonha.download.IFileChecksum;
+import br.pelommedrado.cegonha.download.util.FileDownload;
+import br.pelommedrado.cegonha.download.util.FilePacote;
 import br.pelommedrado.cegonha.parse.ParseChecksumCommand;
 import br.pelommedrado.cegonha.util.FileUtils;
 
 /**
  * @author Andre Leite
  */
-public class FileFtpChecksum {
+public class FileChecksumFtp implements IFileChecksum {
 	/** Gerenciador de logs **/
-	private static Logger logger = LoggerFactory.getLogger(FileFtpChecksum.class);
+	private static Logger logger = LoggerFactory.getLogger(FileChecksumFtp.class);
 
 	/** Representacao do arquivo baixado **/
 	private FileDownload downloadFile = null;
 
 	/**
+	 * Construtor da classe.
 	 * 
-	 * @param ftp
+	 * @param fileLocal
+	 * @param fileRemoto
 	 */
-	public FileFtpChecksum(String fileLocal, String fileRemoto) {
+	public FileChecksumFtp(String fileLocal, String fileRemoto) {
 		super();
 
 		this.downloadFile = new FileDownload(fileLocal, fileRemoto);
@@ -36,8 +41,6 @@ public class FileFtpChecksum {
 
 	/**
 	 * 
-	 * @param ftp
-	 * @throws IOException
 	 */
 	public boolean verificarFileCorrompido(FTPClient ftp) throws IOException {
 		//a conexao nao esta ativa? 
@@ -65,11 +68,8 @@ public class FileFtpChecksum {
 
 	/**
 	 * 
-	 * @param ftp
-	 * @throws NumberFormatException 
-	 * @throws IOException 
 	 */
-	public void scaniarPacoteCorrompido(FTPClient ftp) throws IOException {
+	public void verificarPacoteCorrompido(FTPClient ftp) throws IOException {
 		logger.info("scaniar pacotes corrompidos");
 
 		//a conexao nao esta ativa? 
@@ -107,13 +107,13 @@ public class FileFtpChecksum {
 
 						//bloco esta corrompido?
 						if(FileUtils.isCorrompido(novo, Long.valueOf(checksum))) {
-							downloadFile.add(new FileFtpPacote(off, read));
+							downloadFile.add(new FilePacote(off, read));
 						}
 
 					} else {
 						//bloco esta corrompido?
 						if(FileUtils.isCorrompido(buffer, Long.valueOf(checksum))) {
-							downloadFile.add(new FileFtpPacote(off, read));
+							downloadFile.add(new FilePacote(off, read));
 						}
 
 					}
@@ -137,14 +137,13 @@ public class FileFtpChecksum {
 
 	/**
 	 * 
-	 * @return
 	 */
 	public boolean isPacoteCorrompido() {
 		return !downloadFile.getPacotes().isEmpty();
 	}
 
 	/**
-	 * @return the downloadFile
+	 * 
 	 */
 	public FileDownload getDownloadFile() {
 		return downloadFile;

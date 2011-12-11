@@ -8,7 +8,7 @@ import org.apache.commons.net.ftp.FTPReply;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import br.pelommedrado.cegonha.download.DownloadManager;
+import br.pelommedrado.cegonha.download.impl.DownloadManager;
 
 /**
  * @author Andre Leite
@@ -87,8 +87,6 @@ public class FtpCliente {
 		if(ftp != null && ftp.isConnected()) {
 			ftp.logout();
 			ftp.disconnect();
-
-			ftp = null;
 		}
 	}
 
