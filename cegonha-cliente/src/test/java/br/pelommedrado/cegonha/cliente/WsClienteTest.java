@@ -2,6 +2,9 @@ package br.pelommedrado.cegonha.cliente;
 
 import static org.junit.Assert.assertEquals;
 
+import java.io.IOException;
+import java.net.SocketException;
+
 import org.junit.Before;
 import org.junit.Test;
 
@@ -36,6 +39,17 @@ public class WsClienteTest {
 		assertEquals(0, wsCliente.obterSemente(arquivo).size());
 	}
 
+	/**
+	 * 
+	 * @throws SocketException
+	 * @throws IOException
+	 */
+	@Test
+	public void testParamConexao() throws SocketException, IOException {
+		assertEquals("cegonha-web", wsCliente.getNome());
+		assertEquals("8080",  wsCliente.getPorta());
+	}
+	
 	/**
 	 * 
 	 */

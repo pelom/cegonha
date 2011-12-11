@@ -25,6 +25,13 @@ public class FileFtpRecupera {
 
 	/**
 	 * Construtor da classe.
+	 */
+	public FileFtpRecupera() {
+		this(null, null);
+	}
+	
+	/**
+	 * Construtor da classe.
 	 * 
 	 * @param ftp
 	 * 		Cliente FTP
@@ -94,5 +101,19 @@ public class FileFtpRecupera {
 		}
 
 		return n;
+	}
+
+	/**
+	 * @param fileDownload the fileDownload to set
+	 */
+	public void setFileDownload(FileDownload fileDownload) {
+		this.fileDownload = fileDownload;
+	}
+
+	/**
+	 * @param ftp the ftp to set
+	 */
+	public void setFtp(FTPClient ftp) {
+		this.ftp = ftp;
 	}
 }

@@ -53,7 +53,7 @@ public class DownloadManagerTest {
 		assertEquals(true, new File(fileLocal).exists());
 		assertEquals(false, new File(fileLocal + DownloadManager.EXT_PROPERTIES).exists());
 	}
-	
+
 	/**
 	 *  Testar o download iniciando do inicio do arquivo
 	 * @throws IOException
@@ -174,6 +174,89 @@ public class DownloadManagerTest {
 		//setar Chechsum File moquiado
 		download.setFileFtpChecksum(fileFtpChecksumMock);
 		download.download();
+	}
+
+	/**
+	 * Testar o download executando o processo de recuperacao do arquivo 
+	 * corrompido como o numero de pacotes recuperados diferente ao corrompido
+	 * 
+	 * @throws IOException
+	 */
+	@Test
+	public void testDownloadRecuperacaoArquivoCorrompidoNaoCompletaNumPacote() throws IOException {
+		//criar entrada de dados moquiada
+		final FileInputStream in = new FileInputStream(stgFile);
+
+		//crair mock FTP
+		final FTPClient ftpMock = Mockito.mock(FTPClient.class); 
+		Mockito.when(ftpMock.retrieveFileStream(anyString())).thenReturn(in);
+		Mockito.when(ftpMock.completePendingCommand()).thenReturn(true);
+		Mockito.when(ftpMock.isConnected()).thenReturn(true);
+
+		//criar download manager com o mock do FTP
+		DownloadManager download = new DownloadManager(ftpMock, fileLocal, fileRemoto, true);
+
+		//crair mock do Chechsum File
+		final FileFtpChecksum fileFtpChecksumMock = Mockito.mock(FileFtpChecksum.class);
+		Mockito.when(fileFtpChecksumMock.getDownloadFile()).thenReturn(new FileDownload(fileLocal, fileRemoto));
+		Mockito.when(fileFtpChecksumMock.verificarFileCorrompido(ftpMock)).thenReturn(true);
+		Mockito.doAnswer(new Answer<Object>() {
+			public Object answer(InvocationOnMock invocation) {
+				Object[] args = invocation.getArguments();
+				return "called with arguments: " + args;
+			}
+		}).when(fileFtpChecksumMock).scaniarPacoteCorrompido(ftpMock);
+		Mockito.when(fileFtpChecksumMock.isPacoteCorrompido()).thenReturn(true);
+		//setar Chechsum File moquiado
+		download.setFileFtpChecksum(fileFtpChecksumMock);
+
+		final FileFtpRecupera fileFtpRecuperaMock = Mockito.mock(FileFtpRecupera.class);
+		Mockito.when(fileFtpRecuperaMock.recuperar()).thenReturn(1);
+
+		//setar Ftp Recuoperar moquiado
+		download.setFileFtpRecupera(fileFtpRecuperaMock);
+
+		assertEquals(false, download.download());
+	}
+
+	/**
+	 * Testar o download executando o processo de recuperacao do arquivo 
+	 * corrompido com o valor da variavel de recuperacao igual a false
+	 * 
+	 * @throws IOException
+	 */
+	@Test
+	public void testDownloadRecuperacaoValorFalse() throws IOException {
+		//criar entrada de dados moquiada
+		final FileInputStream in = new FileInputStream(stgFile);
+
+		//crair mock FTP
+		final FTPClient ftpMock = Mockito.mock(FTPClient.class); 
+		Mockito.when(ftpMock.retrieveFileStream(anyString())).thenReturn(in);
+		Mockito.when(ftpMock.completePendingCommand()).thenReturn(true);
+		Mockito.when(ftpMock.isConnected()).thenReturn(true);
+
+		//crair mock do Chechsum File
+		final FileFtpChecksum fileFtpChecksumMock = Mockito.mock(FileFtpChecksum.class);
+		Mockito.when(fileFtpChecksumMock.getDownloadFile()).thenReturn(new FileDownload(fileLocal, fileRemoto));
+		Mockito.when(fileFtpChecksumMock.verificarFileCorrompido(ftpMock)).thenReturn(true);
+		Mockito.doAnswer(new Answer<Object>() {
+			public Object answer(InvocationOnMock invocation) {
+				Object[] args = invocation.getArguments();
+				return "called with arguments: " + args;
+			}
+		}).when(fileFtpChecksumMock).scaniarPacoteCorrompido(ftpMock);
+		Mockito.when(fileFtpChecksumMock.isPacoteCorrompido()).thenReturn(true);
+		
+		//criar download manager com o mock do FTP
+				DownloadManager download = new DownloadManager(ftpMock, fileLocal, fileRemoto, true);
+				
+		//setar Chechsum File moquiado
+		download.setFileFtpChecksum(fileFtpChecksumMock);
+
+		
+		download.setRecuperar(false);
+		assertEquals(false, download.download());
 	}
 
 	/**

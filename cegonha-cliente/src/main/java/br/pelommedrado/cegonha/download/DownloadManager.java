@@ -56,6 +56,9 @@ public class DownloadManager {
 	/** Verificar de integridade do arquivo **/
 	private FileFtpChecksum fileFtpChecksum = null;
 
+	/** Recuperador de arquivo corrompido **/
+	private FileFtpRecupera fileFtpRecupera;
+	
 	/**
 	 * Construtor da classe.
 	 * 
@@ -80,6 +83,7 @@ public class DownloadManager {
 		this.downloaded = 0;
 		this.recuperar = recuperar;
 		this.fileFtpChecksum = new FileFtpChecksum(fileLocal, fileRemoto);
+		this.fileFtpRecupera = new FileFtpRecupera();
 	}
 
 	/**
@@ -259,11 +263,11 @@ public class DownloadManager {
 			//obter numero de pacotes corrompidos
 			int nPkg = fileFtpChecksum.getDownloadFile().getPacotes().size();
 
-			final FileFtpRecupera fRecuperar = 
-					new FileFtpRecupera(ftp, fileFtpChecksum.getDownloadFile());
-
+			fileFtpRecupera.setFtp(ftp);
+			fileFtpRecupera.setFileDownload(fileFtpChecksum.getDownloadFile());
+			
 			//numero de pacotes recuperados e igual?
-			if(fRecuperar.recuperar() != nPkg) {
+			if(fileFtpRecupera.recuperar() != nPkg) {
 				return false;
 			}
 
@@ -279,5 +283,19 @@ public class DownloadManager {
 	 */
 	public void setFileFtpChecksum(FileFtpChecksum fileFtpChecksum) {
 		this.fileFtpChecksum = fileFtpChecksum;
+	}
+
+	/**
+	 * @param fileFtpRecupera the fileFtpRecupera to set
+	 */
+	public void setFileFtpRecupera(FileFtpRecupera fileFtpRecupera) {
+		this.fileFtpRecupera = fileFtpRecupera;
+	}
+	
+	/**
+	 * @param recuperar the recuperar to set
+	 */
+	public void setRecuperar(boolean recuperar) {
+		this.recuperar = recuperar;
 	}
 }
