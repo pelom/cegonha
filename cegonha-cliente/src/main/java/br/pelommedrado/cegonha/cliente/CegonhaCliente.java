@@ -59,6 +59,14 @@ public class CegonhaCliente {
 	public boolean obterArquivos(List<String> arquivos) {
 		logger.info("obter lista de arquivos");
 
+		//a lista esta vazia?
+		if(arquivos.isEmpty()) {
+			return false;
+		}
+		
+		//embalharar lista
+		Collections.shuffle(arquivos);
+		
 		//varrer os arquivos
 		for (String arquivo : arquivos) {
 
@@ -84,7 +92,7 @@ public class CegonhaCliente {
 	 * @param arquivo
 	 * @return
 	 */
-	private boolean processar(Stack<Semente> pilhaSemente, String arquivo) {
+	private boolean processar(final Stack<Semente> pilhaSemente, final String arquivo) {
 		logger.info("processar o download do arquivo:" + arquivo);
 
 		boolean download = false;
