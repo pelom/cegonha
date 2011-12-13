@@ -36,6 +36,9 @@ public class CegonhaCliente {
 	/** Tentar recuperar o arquivo caso esteja corrompido **/
 	private boolean recuperar = true;
 
+	/** Valor maximo do porcentual de perda de pacote **/
+	private int porcetualMaxRecuperar = 10;
+
 	/** Servidor **/
 	private String servidorFtp = null;
 
@@ -221,12 +224,13 @@ public class CegonhaCliente {
 			//arquivo a ser baixado
 			fileDownload = new FileDownload(fileLocal, fileRemoto);
 			fileDownload.setRecuperar(recuperar);
+			fileDownload.setPorcentualMax(porcetualMaxRecuperar);
 
 			//baixar arquivo
 			return ftpCliente.download(fileDownload);
 
 		} catch (IOException e) {
-			logger.error("Nao foi possivel conectar a semente", e);
+			logger.error("Nao foi possivel realizar o download do arquivo " + arquivo, e);
 
 			return false;
 
@@ -337,5 +341,19 @@ public class CegonhaCliente {
 	 */
 	public void setRecuperar(boolean recuperar) {
 		this.recuperar = recuperar;
+	}
+
+	/**
+	 * @return the porcetualMaxRecuperar
+	 */
+	public int getPorcetualMaxRecuperar() {
+		return porcetualMaxRecuperar;
+	}
+
+	/**
+	 * @param porcetualMaxRecuperar the porcetualMaxRecuperar to set
+	 */
+	public void setPorcetualMaxRecuperar(int porcetualMaxRecuperar) {
+		this.porcetualMaxRecuperar = porcetualMaxRecuperar;
 	}
 }
