@@ -36,7 +36,7 @@ public class WsClienteTest {
 	 */
 	@Test
 	public void testObterSemente() {
-		assertEquals(0, wsCliente.obterSemente(arquivo).size());
+		assertEquals(1, wsCliente.obterSemente(arquivo).size());
 	}
 
 	/**

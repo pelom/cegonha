@@ -12,6 +12,7 @@ import java.util.Stack;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import br.pelommedrado.cegonha.download.util.FileDownload;
 import br.pelommedrado.cegonha.model.RequisicaoArquivo;
 import br.pelommedrado.cegonha.model.Semente;
 
@@ -63,10 +64,10 @@ public class CegonhaCliente {
 		if(arquivos.isEmpty()) {
 			return false;
 		}
-		
+
 		//embalharar lista
 		Collections.shuffle(arquivos);
-		
+
 		//varrer os arquivos
 		for (String arquivo : arquivos) {
 
@@ -193,6 +194,10 @@ public class CegonhaCliente {
 	 * @throws IOException 
 	 */
 	private boolean baixarArquivo(Semente semente, String arquivo) {
+		//arquivo local
+		final String fileLocal = dirOut + File.separator + arquivo;
+		//arquivo remoto
+		final String fileRemoto = dirRemoto + File.separator + arquivo;
 		//endereco 
 		String endereco = servidorFtp;
 
@@ -203,23 +208,22 @@ public class CegonhaCliente {
 
 		logger.info("ativar o download  do arquivo:" + arquivo + " na semente:" + endereco);
 
-		ftpCliente.setServidor(endereco);
+		FileDownload fileDownload = null;
 
 		try {
+			ftpCliente.setServidor(endereco);
 			//conectar ao servidor
 			//conexao falhou?
 			if(!ftpCliente.conectar()) {
 				return false;
 			}
 
-			//arquivo local
-			final String fileLocal = dirOut + File.separator + arquivo;
-
-			//arquivo remoto
-			final String fileRemoto = dirRemoto + File.separator + arquivo;
+			//arquivo a ser baixado
+			fileDownload = new FileDownload(fileLocal, fileRemoto);
+			fileDownload.setRecuperar(recuperar);
 
 			//baixar arquivo
-			return ftpCliente.download(fileRemoto, fileLocal, recuperar);
+			return ftpCliente.download(fileDownload);
 
 		} catch (IOException e) {
 			logger.error("Nao foi possivel conectar a semente", e);

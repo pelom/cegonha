@@ -14,6 +14,8 @@ import org.mockito.Mockito;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 
+import br.pelommedrado.cegonha.download.util.FileDownload;
+
 /**
  * @author Andre Leite
  */
@@ -27,6 +29,9 @@ public class FtpClienteTest {
 
 	/** Arquivo remoto **/
 	private static String fileRemoto;
+
+	/** Arquivo a ser baixado **/
+	private FileDownload fileDownload;
 
 	/**
 	 * 
@@ -43,6 +48,8 @@ public class FtpClienteTest {
 
 		fileLocal = "/home/pelom/Capture_20111205.wmv";
 		fileRemoto = "Capture_20111205.wmv";
+
+		fileDownload = new FileDownload(fileLocal, fileRemoto);
 	}
 
 	/**
@@ -102,7 +109,7 @@ public class FtpClienteTest {
 	@Test
 	public void testDownload() throws IOException {
 		ftpClite.conectar();
-		assertEquals(true, ftpClite.download(fileRemoto, fileLocal, true));
+		assertEquals(true, ftpClite.download(fileDownload));
 	}
 
 	/**
@@ -115,7 +122,7 @@ public class FtpClienteTest {
 		final FTPClient ftpMock = Mockito.mock(FTPClient.class); 
 		Mockito.when(ftpMock.isConnected()).thenReturn(false);
 		ftpClite.setFtp(ftpMock);
-		ftpClite.download(fileRemoto, fileLocal, true);
+		ftpClite.download(fileDownload);
 	}
 
 	/**

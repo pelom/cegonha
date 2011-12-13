@@ -19,6 +19,7 @@ import org.slf4j.LoggerFactory;
 import br.pelommedrado.cegonha.download.IDownloadManager;
 import br.pelommedrado.cegonha.download.IFileChecksum;
 import br.pelommedrado.cegonha.download.IFileRecuperar;
+import br.pelommedrado.cegonha.download.util.FileDownload;
 
 
 /**
@@ -45,18 +46,12 @@ public class DownloadManager implements IDownloadManager {
 
 	/**  Numero do bytes baixados **/
 	private long downloaded; 
-
-	/** Arquivo local **/
-	private String fileLocal;
-
-	/** Arquivo remoto **/
-	private String fileRemoto;
-
+	
+	/** Referencia do arquivo a ser baixado **/
+	private FileDownload fileDownload;
+	
 	/** Entrada de dados **/
 	private FTPClient ftp = null;
-
-	/** Tentar recuperar o arquivo caso esteja corrompido **/
-	private boolean recuperar = true;
 
 	/** Verificar de integridade do arquivo **/
 	private IFileChecksum fileChecksum = null;
@@ -66,29 +61,18 @@ public class DownloadManager implements IDownloadManager {
 
 	/**
 	 * Construtor da classe.
-	 * 
 	 * @param ftp
-	 * 		Cliente FTP
-	 * 
-	 * @param fileLocal
-	 * 		Arquivo local
-	 * 
-	 * @param fileRemoto
-	 * 		Arquivo remoto
-	 * 
-	 * @param recuperar
-	 * 		True para recuperar o arquivo caso corrompa
+	 * @param fileDownload
 	 */
-	public DownloadManager(FTPClient ftp, String fileLocal, String fileRemoto, boolean recuperar) {
+	public DownloadManager(FTPClient ftp, FileDownload fileDownload) {
 		super();
 
 		this.ftp = ftp;
-		this.fileLocal = fileLocal;
-		this.fileRemoto = fileRemoto;
+		this.fileDownload = fileDownload;
 		this.downloaded = 0;
-		this.recuperar = recuperar;
-		this.fileChecksum = new FileChecksumFtp(fileLocal, fileRemoto);
 		this.fileRecupera = new FileRecuperaFtp();
+		this.fileChecksum = new FileChecksumFtp();
+		this.fileChecksum.setFileDownload(fileDownload);
 	}
 
 	/**
@@ -104,7 +88,7 @@ public class DownloadManager implements IDownloadManager {
 		//configurar Input
 		final InputStream in = prepararFtp();
 		//configurar arquivo local
-		final File file = new File(fileLocal + EXT_FILE);
+		final File file = new File(fileDownload.getFileLocal() + EXT_FILE);
 		//abrir o arquivo local
 		final RandomAccessFile out = new RandomAccessFile(file, "rw");
 		//configurar posicao de escrita
@@ -133,7 +117,7 @@ public class DownloadManager implements IDownloadManager {
 		logger.debug("analizar as configuracoes dos dados baixados");
 
 		//arquivo de controle do download
-		fileCtl = new File(fileLocal + EXT_PROPERTIES);
+		fileCtl = new File(fileDownload.getFileLocal() + EXT_PROPERTIES);
 
 		//existe um download nao concluido?
 		if(fileCtl.exists()) {
@@ -159,7 +143,7 @@ public class DownloadManager implements IDownloadManager {
 		ftp.setFileType(FTPClient.BINARY_FILE_TYPE);
 
 		//obter entrada de dados
-		InputStream in = ftp.retrieveFileStream(fileRemoto);
+		InputStream in = ftp.retrieveFileStream(fileDownload.getFileRemoto());
 
 		//operacao realizada com sucesso?
 		if(in != null) {
@@ -240,11 +224,11 @@ public class DownloadManager implements IDownloadManager {
 		} catch (IOException e) {
 			throw new CopyStreamException(
 					"IOException caught while copying.", downloaded, e);
-			
+
 		} finally {
 			try {in.close();
 			}catch (Exception e) {}
-			
+
 			out.close();
 		}
 
@@ -252,7 +236,7 @@ public class DownloadManager implements IDownloadManager {
 		//download concluiu
 		if(ok) {
 			//renomear arquivo
-			file.renameTo(new File(fileLocal));
+			file.renameTo(new File(fileDownload.getFileLocal()));
 
 		} else {
 			file.delete();
@@ -269,25 +253,24 @@ public class DownloadManager implements IDownloadManager {
 	 * @throws IOException
 	 */
 	private boolean recuperarFile() throws IOException {
-		if(!recuperar) {
+		//o arquivo nao deve ser recuperado?
+		if(!fileDownload.isRecuperar()) {
 			return false;
 		}
 
 		logger.debug("preparar para recuperar o arquivo corrompido");
 
 		//scaniar os pacotes corrompidos
-		fileChecksum.verificarPacoteCorrompido(ftp);
+		//obter numero de pacotes corrompidos
+		final int nPkgLoss = fileChecksum.verificarPacoteCorrompido(ftp);
 
 		//foi possivel identificar pacotes corrompidos?
 		if(fileChecksum.isPacoteCorrompido()) {
-			//obter numero de pacotes corrompidos
-			int nPkg = fileChecksum.getDownloadFile().getPacotes().size();
-
 			fileRecupera.setFtp(ftp);
-			fileRecupera.setFileDownload(fileChecksum.getDownloadFile());
+			fileRecupera.setFileDownload(fileChecksum.getFileDownload());
 
 			//numero de pacotes recuperados e igual?
-			if(fileRecupera.recuperar() != nPkg) {
+			if(fileRecupera.recuperar() != nPkgLoss) {
 				return false;
 			}
 
@@ -312,12 +295,5 @@ public class DownloadManager implements IDownloadManager {
 	 */
 	public void setFileRecupera(IFileRecuperar fileRecupera) {
 		this.fileRecupera = fileRecupera;
-	}
-
-	/**
-	 * @param recuperar the recuperar to set
-	 */
-	public void setRecuperar(boolean recuperar) {
-		this.recuperar = recuperar;
 	}
 }

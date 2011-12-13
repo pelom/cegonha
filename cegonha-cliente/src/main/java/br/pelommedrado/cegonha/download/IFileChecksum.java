@@ -28,7 +28,7 @@ public interface IFileChecksum {
 	 * @param ftp
 	 * @throws IOException
 	 */
-	public void verificarPacoteCorrompido(FTPClient ftp) 
+	public int verificarPacoteCorrompido(FTPClient ftp) 
 			throws IOException;
 
 	/**
@@ -41,5 +41,11 @@ public interface IFileChecksum {
 	 * 
 	 * @return
 	 */
-	public FileDownload getDownloadFile();
+	public FileDownload getFileDownload();
+	
+	/**
+	 * 
+	 * @param fileDownload
+	 */
+	public void setFileDownload(FileDownload fileDownload);
 }

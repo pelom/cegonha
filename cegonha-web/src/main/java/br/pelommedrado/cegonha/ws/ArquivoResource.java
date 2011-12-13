@@ -1,8 +1,8 @@
 package br.pelommedrado.cegonha.ws;
 
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import javax.ws.rs.GET;
 import javax.ws.rs.PUT;
@@ -55,7 +55,7 @@ public class ArquivoResource {
 	 */
 	@GET
 	@Path("/lista-semente/{arquivo}")
-	public List<Semente> listaSemente(@PathParam("arquivo") String arquivo) {
+	public Set<Semente> listaSemente(@PathParam("arquivo") String arquivo) {
 		return mapaSemente.getListaSementes(arquivo);
 	}
 

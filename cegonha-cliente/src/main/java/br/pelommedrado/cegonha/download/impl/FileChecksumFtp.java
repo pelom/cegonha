@@ -25,18 +25,13 @@ public class FileChecksumFtp implements IFileChecksum {
 	private static Logger logger = LoggerFactory.getLogger(FileChecksumFtp.class);
 
 	/** Representacao do arquivo baixado **/
-	private FileDownload downloadFile = null;
+	private FileDownload fileDownload = null;
 
 	/**
 	 * Construtor da classe.
-	 * 
-	 * @param fileLocal
-	 * @param fileRemoto
 	 */
-	public FileChecksumFtp(String fileLocal, String fileRemoto) {
+	public FileChecksumFtp() {
 		super();
-
-		this.downloadFile = new FileDownload(fileLocal, fileRemoto);
 	}
 
 	/**
@@ -50,7 +45,7 @@ public class FileChecksumFtp implements IFileChecksum {
 
 		//enviar requisicao do chechsum
 		ftp.doCommand(ParseChecksumCommand.CHECKSUM,
-				ParseChecksumCommand.parse(downloadFile.getFileRemoto()));
+				ParseChecksumCommand.parse(fileDownload.getFileRemoto()));
 
 		//operacao realizada com sucesso?
 		if(FTPReply.isPositiveCompletion(ftp.getReplyCode())) {
@@ -58,7 +53,7 @@ public class FileChecksumFtp implements IFileChecksum {
 			//obter o valor retornado
 			final long checksum = ParseChecksumCommand.parseChecksum(ftp.getReplyString());
 
-			return FileUtils.isCorrompido(downloadFile.getFileLocal(), checksum);
+			return FileUtils.isCorrompido(fileDownload.getFileLocal(), checksum);
 
 		} else {
 			throw new IOException("nao foi possivel realizar o checksum do arquivo");
@@ -69,7 +64,7 @@ public class FileChecksumFtp implements IFileChecksum {
 	/**
 	 * 
 	 */
-	public void verificarPacoteCorrompido(FTPClient ftp) throws IOException {
+	public int verificarPacoteCorrompido(FTPClient ftp) throws IOException {
 		logger.info("scaniar pacotes corrompidos");
 
 		//a conexao nao esta ativa? 
@@ -87,12 +82,12 @@ public class FileChecksumFtp implements IFileChecksum {
 
 		try {
 			//abrir o arquivo
-			fileIn = new FileInputStream(downloadFile.getFileLocal());
+			fileIn = new FileInputStream(fileDownload.getFileLocal());
 
 			while ((read = fileIn.read(buffer)) != -1) {
 				//enviar requisicao do chechsum
 				ftp.doCommand(ParseChecksumCommand.CHECKSUM,
-						ParseChecksumCommand.parse(downloadFile.getFileRemoto(), off, read));
+						ParseChecksumCommand.parse(fileDownload.getFileRemoto(), off, read));
 
 				//operacao realizada com sucesso?
 				if(FTPReply.isPositiveCompletion(ftp.getReplyCode())) {
@@ -107,13 +102,13 @@ public class FileChecksumFtp implements IFileChecksum {
 
 						//bloco esta corrompido?
 						if(FileUtils.isCorrompido(novo, Long.valueOf(checksum))) {
-							downloadFile.add(new FilePacote(off, read));
+							fileDownload.add(new FilePacote(off, read));
 						}
 
 					} else {
 						//bloco esta corrompido?
 						if(FileUtils.isCorrompido(buffer, Long.valueOf(checksum))) {
-							downloadFile.add(new FilePacote(off, read));
+							fileDownload.add(new FilePacote(off, read));
 						}
 
 					}
@@ -127,25 +122,35 @@ public class FileChecksumFtp implements IFileChecksum {
 			}
 
 		} finally {
-			logger.debug(downloadFile.getPacotes().size() + " pacotes encontrados");
+			logger.debug(fileDownload.getPacotes().size() + " pacotes encontrados");
 
 			if(fileIn != null) {
 				fileIn.close();
 			}
 		}
+		
+		return fileDownload.getNumPacoteCorrompido();
 	}
 
 	/**
 	 * 
 	 */
 	public boolean isPacoteCorrompido() {
-		return !downloadFile.getPacotes().isEmpty();
+		return !fileDownload.getPacotes().isEmpty();
 	}
 
 	/**
 	 * 
 	 */
-	public FileDownload getDownloadFile() {
-		return downloadFile;
+	public FileDownload getFileDownload() {
+		return fileDownload;
+	}
+	
+	/**
+	 * 
+	 * @param fileDownload
+	 */
+	public void setFileDownload(FileDownload fileDownload) {
+		this.fileDownload = fileDownload;
 	}
 }

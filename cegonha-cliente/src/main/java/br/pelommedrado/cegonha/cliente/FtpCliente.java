@@ -4,11 +4,13 @@ import java.io.IOException;
 import java.net.SocketException;
 
 import org.apache.commons.net.ftp.FTPClient;
+import org.apache.commons.net.ftp.FTPFile;
 import org.apache.commons.net.ftp.FTPReply;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import br.pelommedrado.cegonha.download.impl.DownloadManager;
+import br.pelommedrado.cegonha.download.util.FileDownload;
 
 /**
  * @author Andre Leite
@@ -55,7 +57,7 @@ public class FtpCliente {
 		if(ftp.isConnected()) {
 			throw new IOException("a conexao esta ativa");
 		}
-		
+
 		//estabelecar conexao
 		ftp.connect(servidor, porta);  
 
@@ -98,17 +100,21 @@ public class FtpCliente {
 	 * @return
 	 * @throws IOException
 	 */
-	public boolean download(String fileRemoto, String fileLocal, boolean recuperar) throws IOException {
+	public boolean download(FileDownload fileDownload) throws IOException {
 		//a conexao nao esta ativa? 
 		if(!ftp.isConnected()) {
 			throw new IOException("a conexao nao esta ativa");  
 		}
 
+		//obter informacoes do arquivo a ser baixado
+		final FTPFile ftpFile = ftp.listFiles(fileDownload.getFileRemoto())[0];
+		fileDownload.setLen(ftpFile.getSize());
+		
 		logger.debug("baixando o arquivo...");
 
 		//iniciar o gerenciador de download
 		final DownloadManager downloadManager = 
-				new DownloadManager(ftp, fileLocal, fileRemoto, recuperar);
+				new DownloadManager(ftp, fileDownload);
 
 		return downloadManager.download();
 	}

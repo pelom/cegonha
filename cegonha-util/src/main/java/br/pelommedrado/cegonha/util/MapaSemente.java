@@ -3,10 +3,9 @@
  */
 package br.pelommedrado.cegonha.util;
 
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.List;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
@@ -18,7 +17,7 @@ import br.pelommedrado.cegonha.model.Semente;
 public class MapaSemente {
 
 	/** Mapa com a lista de sementes **/
-	private Map<Integer, List<Semente> > mapa;
+	private Map<Integer, Set<Semente> > mapa;
 
 	/**
 	 * Construtor da classe.
@@ -26,7 +25,7 @@ public class MapaSemente {
 	public MapaSemente() {
 		super();
 
-		mapa = new HashMap<Integer, List<Semente>>();
+		mapa = new HashMap<Integer, Set<Semente>>();
 	}
 
 	/**
@@ -40,12 +39,12 @@ public class MapaSemente {
 		final Integer key =  new Integer(chave.hashCode());
 
 		//obter lista de sementes
-		List<Semente> sementes = mapa.get(key);
+		Set<Semente> sementes = mapa.get(key);
 
 		//lista de semente nao existe?
 		if(sementes == null) {
 			//crair e adicionar a lista 
-			sementes = new ArrayList<Semente>();
+			sementes = new HashSet<Semente>();
 
 			mapa = Collections.synchronizedMap(mapa);
 			synchronized(mapa) {
@@ -53,7 +52,7 @@ public class MapaSemente {
 			}
 		}
 
-		sementes = Collections.synchronizedList(sementes);
+		sementes = Collections.synchronizedSet(sementes);
 		synchronized(sementes) {
 			//adicionar semente
 			sementes.add(semente);
@@ -65,13 +64,13 @@ public class MapaSemente {
 	 * @param chave
 	 * @return
 	 */
-	public List<Semente> getListaSementes(String chave) {
+	public Set<Semente> getListaSementes(String chave) {
 		//gerar chave
 		final Integer key =  new Integer(chave.hashCode());
 
-		List<Semente> sementes = mapa.get(key);
+		Set<Semente> sementes = mapa.get(key);
 		if(sementes == null) {
-			sementes = new ArrayList<Semente>();
+			sementes = new HashSet<Semente>();
 		}
 
 		return sementes;
@@ -82,17 +81,17 @@ public class MapaSemente {
 	 * @param chave
 	 * @return
 	 */
-	public List<Semente> getListaSementesAtiva(String chave) {
-		List<Semente> sementes = getListaSementes(chave);
+	public Set<Semente> getListaSementesAtiva(String chave) {
+		Set<Semente> sementes = getListaSementes(chave);
 
-		sementes = Collections.synchronizedList(sementes);
+		sementes = Collections.synchronizedSet(sementes);
 
 		synchronized(sementes) {
 			if(sementes.isEmpty()) {
 				return sementes;
 			}
 
-			List<Semente> sementeAtiva = new ArrayList<Semente>();
+			Set<Semente> sementeAtiva = new HashSet<Semente>();
 
 			for (Semente semente : sementes) {
 				if(semente.isAtiva()) {
@@ -115,7 +114,7 @@ public class MapaSemente {
 			//varrer as chaves
 			for (Integer integer : chaves) {
 				//lista de sementes
-				final List<Semente> sementes = mapa.get(integer);
+				final Set<Semente> sementes = mapa.get(integer);
 
 				for (Semente semente : sementes) {
 					semente.setAtiva(Utils.ping(semente.getEndereco()));		
@@ -135,8 +134,8 @@ public class MapaSemente {
 			//varrer as chaves
 			for (Integer integer : chaves) {
 				//lista de sementes
-				final List<Semente> sementes = mapa.get(integer);
-				final List<Semente> clone = new ArrayList<Semente>();
+				final Set<Semente> sementes = mapa.get(integer);
+				final Set<Semente> clone = new HashSet<Semente>();
 				clone.addAll(sementes);
 				for (Semente semente : clone) {
 					if(!semente.isAtiva()) {
@@ -160,7 +159,7 @@ public class MapaSemente {
 			//varrer as chaves
 			for (Integer integer : chaves) {
 				//lista de sementes
-				final List<Semente> sementes = mapa.get(integer);
+				final Set<Semente> sementes = mapa.get(integer);
 			
 				size += sementes.size();
 			}

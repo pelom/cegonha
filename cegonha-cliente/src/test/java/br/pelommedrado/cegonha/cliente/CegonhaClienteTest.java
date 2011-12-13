@@ -49,4 +49,13 @@ public class CegonhaClienteTest {
 		
 		assertEquals(true, cegonha.obterArquivos(arquivos));
 	}
+	/**
+	 * 
+	 */
+	@Test
+	public void testCegonhaListaVazia() {
+		CegonhaCliente cegonha = new CegonhaCliente();
+		final List<String> arquivos = new ArrayList<String>();
+		assertEquals(false, cegonha.obterArquivos(arquivos));
+	}
 }

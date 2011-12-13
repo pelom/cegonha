@@ -30,31 +30,21 @@ public class FileRecuperaFtp implements IFileRecuperar {
 	 * Construtor da classe.
 	 */
 	public FileRecuperaFtp() {
-		this(null, null);
-	}
-
-	/**
-	 * Construtor da classe.
-	 * 
-	 * @param ftp
-	 * 		Cliente FTP
-	 * 
-	 * @param fileDownload
-	 * 		Arquivo para ser recuperado
-	 */
-	public FileRecuperaFtp(FTPClient ftp, FileDownload fileDownload) {
 		super();
-
-		this.ftp = ftp;
-		this.fileDownload = fileDownload;
 	}
-
+	
 	/**
 	 * 
 	 * @return
 	 * @throws IOException
 	 */
 	public int recuperar() throws IOException {
+		//o arquivo nao pode ser recuperado?
+		if(!fileDownload.isPodeRecuperar()) {
+			throw new IOException("nao foi possivel recuperar o arquivo " + fileDownload.getFileLocal() + 
+					" o porcentual de perda ultrapassou a faixa permitida " + fileDownload.calcPorcentualPerdaPacote());
+		}
+		
 		//a conexao nao esta ativa? 
 		if(!ftp.isConnected()) {
 			throw new IOException("a conexao nao esta ativa");  
@@ -103,9 +93,12 @@ public class FileRecuperaFtp implements IFileRecuperar {
 			}
 		}
 
+		//limpar os pacotes
+		fileDownload.getPacotes().clear();
+		
 		return n;
 	}
-
+	
 	/**
 	 * @param fileDownload the fileDownload to set
 	 */

@@ -21,12 +21,6 @@ public interface IDownloadManager {
 	 * @param fileRecupera
 	 */
 	public void setFileRecupera(IFileRecuperar fileRecuperar);
-
-	/**
-	 * 
-	 * @param recuperar
-	 */
-	public void setRecuperar(boolean recuperar);
 	
 	/**
 	 * 
