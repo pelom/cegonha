@@ -1,5 +1,6 @@
 package br.pelommedrado.cegonha.ws;
 
+import java.io.File;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
@@ -14,8 +15,9 @@ import org.springframework.stereotype.Component;
 
 import br.pelommedrado.cegonha.model.RequisicaoArquivo;
 import br.pelommedrado.cegonha.model.Semente;
-import br.pelommedrado.cegonha.server.ServidorFtp;
+import br.pelommedrado.cegonha.server.SementeFtplet;
 import br.pelommedrado.cegonha.util.MapaSemente;
+import br.pelommedrado.cegonha.util.PropertiesUtil;
 
 import com.sun.jersey.spi.resource.Singleton;
 
@@ -33,11 +35,11 @@ public class ArquivoResource {
 	@Autowired
 	private MapaSemente mapaSemente;
 
-	@Autowired
-	private ServidorFtp server;
-
 	/** meus arquivos **/
-	private Map<String, String> meusArquivo;
+	private Map<String, File> meusArquivo;
+
+	/** Path base **/
+	private String pathBase;
 
 	/**
 	 * Construtor da classe.
@@ -45,7 +47,8 @@ public class ArquivoResource {
 	public ArquivoResource() {
 		super();
 
-		meusArquivo = new HashMap<String, String>();
+		this.pathBase = PropertiesUtil.getProperty("pasta.download");
+		this.meusArquivo = new HashMap<String, File>();
 	}
 
 	/**
@@ -70,10 +73,11 @@ public class ArquivoResource {
 		//criar resposta
 		RequisicaoArquivo request = new RequisicaoArquivo();
 
-		String t = meusArquivo.get(arquivo);
-		if(t != null) {
-			request.setTemArquivo(true);
-			request.setDisponivel(server.getCount() < MAX);
+		final File file = meusArquivo.get(arquivo);
+		
+		if(file != null) {
+			request.setTemArquivo(file.exists());
+			request.setDisponivel(SementeFtplet.count < MAX);
 		}
 
 		return request;
@@ -87,6 +91,10 @@ public class ArquivoResource {
 	@PUT
 	@Path("/plantasemente/{arquivo}")
 	public void plantarSemente(@PathParam("arquivo") String arquivo) {
-		meusArquivo.put(arquivo, "SIM");
+		final File file = new File(pathBase + File.separator + arquivo);
+
+		if(file.exists()) {
+			meusArquivo.put(arquivo, file);
+		}
 	}
 }

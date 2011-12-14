@@ -23,6 +23,15 @@
 		<module>cegonha-util</module>
 	</modules>
 
+	<developers>
+		<developer>
+			<id>pelom</id>
+			<name>André Leite</name>
+			<email>pelommedrado@gmail.com</email>
+			<url>https://github.com/pelom</url>
+		</developer>
+	</developers>
+	
 	<build>
 		<plugins>
 			<plugin>

@@ -13,12 +13,7 @@
              http://www.springframework.org/schema/lang/spring-lang-2.5.xsd
              http://mina.apache.org/ftpserver/spring/v1
              http://mina.apache.org/ftpserver/ftpserver-1.0.xsd ">
-
-	<beans:bean id="appServer" class="br.pelommedrado.cegonha.server.ServidorFtp" scope="singleton">
-		<beans:property name="ftpServer" ref="server" />
-		<beans:property name="mapaSemente" ref="mapaSemente" />
-	</beans:bean>
-
+             
 	<server id="server" 
 			max-logins="500" 
 			max-anon-logins="500"
@@ -30,8 +25,8 @@
 		<ftplets>
 			<ftplet name="ftplet1">
 				<beans:bean class="br.pelommedrado.cegonha.server.SementeFtplet">
-					<beans:property name="listener" ref="appServer"/>
 					<beans:property name="pathBase" value="${pasta.root.download}"/>
+					<beans:property name="mapaSemente" ref="mapaSemente" />
 				</beans:bean>
 			</ftplet>
 		</ftplets>

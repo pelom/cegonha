@@ -78,33 +78,6 @@ public class MapaSemente {
 
 	/**
 	 * 
-	 * @param chave
-	 * @return
-	 */
-	public Set<Semente> getListaSementesAtiva(String chave) {
-		Set<Semente> sementes = getListaSementes(chave);
-
-		sementes = Collections.synchronizedSet(sementes);
-
-		synchronized(sementes) {
-			if(sementes.isEmpty()) {
-				return sementes;
-			}
-
-			Set<Semente> sementeAtiva = new HashSet<Semente>();
-
-			for (Semente semente : sementes) {
-				if(semente.isAtiva()) {
-					sementeAtiva.add(semente);
-				}
-			}
-
-			return sementeAtiva;
-		}
-	}
-
-	/**
-	 * 
 	 */
 	public void verificarSementeAtiva() {
 		mapa = Collections.synchronizedMap(mapa);
@@ -145,26 +118,28 @@ public class MapaSemente {
 			}
 		}
 	}
-	
+
 	/**
 	 * 
 	 */
 	public int size() {
-		int size = 0;
-		
+		final Set<Semente> sementeTemp = new HashSet<Semente>();
+
 		mapa = Collections.synchronizedMap(mapa);
 
 		synchronized(mapa) {
+			
 			final Set<Integer> chaves = mapa.keySet();
+			
 			//varrer as chaves
 			for (Integer integer : chaves) {
 				//lista de sementes
 				final Set<Semente> sementes = mapa.get(integer);
-			
-				size += sementes.size();
+
+				sementeTemp.addAll(sementes);
 			}
 		}
-		
-		return size;
+
+		return sementeTemp.size();
 	}
 }

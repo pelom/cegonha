@@ -8,19 +8,29 @@ import org.apache.ftpserver.ftplet.FtpException;
 import org.apache.ftpserver.ftplet.FtpRequest;
 import org.apache.ftpserver.ftplet.FtpSession;
 import org.apache.ftpserver.ftplet.FtpletResult;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.InitializingBean;
+import org.springframework.util.Assert;
 
-import br.pelommedrado.cegonha.server.listener.ISementeFtpletListener;
+import br.pelommedrado.cegonha.model.Semente;
+import br.pelommedrado.cegonha.util.MapaSemente;
 
 /**
  * @author Andre Leite
  */
-public class SementeFtplet extends DefaultFtplet {
-
-	/** Ouvinte de eventos do servidor **/
-	private ISementeFtpletListener listener; 
+public class SementeFtplet extends DefaultFtplet implements InitializingBean {
+	/** Objeto de saida de mensagens no console. */
+	private Logger logger = LoggerFactory.getLogger(SementeFtplet.class);
 
 	/** Path base **/
 	private String pathBase;
+
+	/** Mapa de sementes **/
+	private MapaSemente mapaSemente = null;
+
+	/** Numero de pessoa baixando **/
+	public static int count = 0;
 
 	/**
 	 * Construtor da classe.
@@ -36,17 +46,27 @@ public class SementeFtplet extends DefaultFtplet {
 	public FtpletResult onDownloadEnd(FtpSession session, FtpRequest request) 
 			throws FtpException, IOException {
 
-		FtpletResult retVal = FtpletResult.DEFAULT;
+		final FtpletResult retVal = FtpletResult.DEFAULT;
 
 		//obter endereco do cliente
 		final String endereco = session.getClientAddress().getAddress().getHostAddress();
 		//nome do arquivo que foi baixado
 		final String nomeArquivo = request.getArgument();
+
+		//criar arquivo
 		final File file = new File(pathBase + nomeArquivo);
-		synchronized (listener) {
-			//notificar ouvinte
-			listener.terminoDownLoad(endereco, file);
-		}
+
+		logger.info("termino do download endereco:" + endereco + " arquivo:" + file);
+
+		count--;
+
+		//criar nova semente
+		final Semente semente = new Semente(endereco);
+
+		//adicionar novo semente
+		mapaSemente.addSemente(file.getName(), semente);
+
+		logger.debug("downloads ativos: " + count);
 
 		return retVal;
 	}
@@ -58,31 +78,31 @@ public class SementeFtplet extends DefaultFtplet {
 	public FtpletResult onDownloadStart(FtpSession session, FtpRequest request)
 			throws FtpException, IOException {
 
+		final FtpletResult retVal = FtpletResult.DEFAULT;
+
 		//obter endereco do cliente
 		final String endereco = session.getClientAddress().getAddress().getHostAddress();
 		//nome do arquivo que foi baixado
 		final String nomeArquivo = request.getArgument();
+		//criar arquivo
+		final File file = new File(pathBase + nomeArquivo);
 
-		synchronized (listener) {
-			//notificar ouvinte
-			listener.iniciandoDownload(endereco, new File(nomeArquivo));
-		}
+		logger.info("inicio do download endereco:" + endereco + " arquivo:" + file);
 
-		return super.onDownloadStart(session, request);
+		count++;
+
+		logger.debug("downloads ativos: " + count);
+
+		return retVal;
+
 	}
 
 	/**
-	 * @return the listener
+	 * 
 	 */
-	public ISementeFtpletListener getListener() {
-		return listener;
-	}
-
-	/**
-	 * @param listener the listener to set
-	 */
-	public void setListener(ISementeFtpletListener listener) {
-		this.listener = listener;
+	@Override
+	public void afterPropertiesSet() throws Exception {
+		Assert.notNull(mapaSemente, "mapaSemente required");
 	}
 
 	/**
@@ -97,5 +117,19 @@ public class SementeFtplet extends DefaultFtplet {
 	 */
 	public void setPathBase(String pathBase) {
 		this.pathBase = pathBase;
+	}
+
+	/**
+	 * @return the mapaSemente
+	 */
+	public MapaSemente getMapaSemente() {
+		return mapaSemente;
+	}
+
+	/**
+	 * @param mapaSemente the mapaSemente to set
+	 */
+	public void setMapaSemente(MapaSemente mapaSemente) {
+		this.mapaSemente = mapaSemente;
 	}
 }

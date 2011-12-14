@@ -5,6 +5,7 @@ package br.pelommedrado.cegonha.cliente;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Stack;
@@ -15,6 +16,7 @@ import org.slf4j.LoggerFactory;
 import br.pelommedrado.cegonha.download.util.FileDownload;
 import br.pelommedrado.cegonha.model.RequisicaoArquivo;
 import br.pelommedrado.cegonha.model.Semente;
+import br.pelommedrado.cegonha.util.Utils;
 
 /**
  * @author Andre Leite
@@ -38,7 +40,7 @@ public class CegonhaCliente {
 
 	/** Valor maximo do porcentual de perda de pacote **/
 	private int porcetualMaxRecuperar = 10;
-
+	
 	/** Servidor **/
 	private String servidorFtp = null;
 
@@ -164,15 +166,29 @@ public class CegonhaCliente {
 	private Stack<Semente> obterSementeAtiva(List<Semente> sementes, String arquivo) {
 		logger.info("iniciando a busca por semente que obtenha o arquivo:" + arquivo);
 
+		final List<Semente> ativas = new ArrayList<Semente>();
+		for (Semente semente : sementes) {
+			if(semente.isAtiva()) {
+				ativas.add(semente);
+			}
+		}
+		
 		final Stack<Semente> sementesAtiva = new Stack<Semente>();
 
 		WsCliente wsSemente = null;
 
 		//embaralhar sementes
-		Collections.shuffle(sementes);
+		Collections.shuffle(ativas);
 
-		//varrer sementes
-		for (Semente semente : sementes) {
+		//varrer sementes ativas
+		for (Semente semente : ativas) {
+			
+			//a semente nao respondeu?
+			if(!Utils.ping(semente.getEndereco())) {
+				logger.warn("a semente:" + semente.getEndereco() + " nao respondeu");
+				continue;
+			}
+			
 			//criar novo cliente web service
 			wsSemente = new WsCliente(semente.getEndereco(),
 					wsServidor.getPorta(), wsServidor.getNome());

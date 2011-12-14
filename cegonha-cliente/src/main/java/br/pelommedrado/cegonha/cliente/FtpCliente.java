@@ -107,8 +107,11 @@ public class FtpCliente {
 		}
 
 		//obter informacoes do arquivo a ser baixado
-		final FTPFile ftpFile = ftp.listFiles(fileDownload.getFileRemoto())[0];
-		fileDownload.setLen(ftpFile.getSize());
+		final FTPFile[] ftpFiles = ftp.listFiles(fileDownload.getFileRemoto());
+		if(ftpFiles.length < 0) {
+			throw new IOException("arquivo nao encontrado " + fileDownload.getFileRemoto());
+		}
+		fileDownload.setLen(ftpFiles[0].getSize());
 		
 		logger.debug("baixando o arquivo...");
 

@@ -72,12 +72,12 @@ public class WsCliente {
 	 * @return
 	 */
 	public List<Semente> obterSemente(String arquivo) {
-		List<Semente> listaSemente = service.
+		final List<Semente> listaSemente = service.
 				path(REST).
 				path(ARQUIVO).
 				path("lista-semente").path(arquivo).
 				accept(MediaType.TEXT_XML).get(new GenericType<List<Semente>>(){});
-
+		
 		return listaSemente;
 	}
 
